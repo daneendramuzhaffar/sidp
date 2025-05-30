@@ -11,14 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('schedules', function (Blueprint $table) {
+        Schema::create('workers', function (Blueprint $table) {
             $table->id();
-            $table->date('date');
-            $table->string('worker');
-            $table->time('start');
-            $table->integer('duration'); // in minutes
-            $table->string('plat');
-            $table->timestamps();
+            $table->string('nama');
+            $table->enum('status', ['aktif','sedang memperbaiki','izin','sakit','cuti','training','off'])->onDelete('cascade');
+            $table->time('mulai');
+            $table->time('selesai');
         });
     }
 
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('schedules');
+        Schema::dropIfExists('workers');
     }
 };

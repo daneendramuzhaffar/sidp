@@ -3,65 +3,73 @@
 namespace App\Livewire;
 
 use App\Models\Schedule;
+use App\Models\Workers;
+use App\Models\WorkTypes;
 use Livewire\Component;
 
 class ScheduleBoard extends Component
 {
-     public $dates = [];
-    public $workers = ['Asep', 'Budi', 'Cici', 'Dedi', 'Eka'];
+    public $dates = [];
+    public $workers = [];
     public $times = [];
-
     public $schedules = [];
+    public $worktypes = [];
     public $showModal = false;
-    public $editDate;
-    public $editWorker;
-    public $editTime;
-    public $editDuration;
-    public $editPlat;
+
+    // Untuk edit
+    public $editDate, $editWorker, $editTime, $editDuration, $editPlat;
 
     public function mount()
     {
-        // Generate time dari 08:00 sampai 17:45 per 15 menit
+        $today = date('Y-m-d');
+        $this->dates = [$today];
+
+        // Ambil semua pekerja yang punya jadwal hari ini
+        $this->workers = Workers::whereHas('schedules', function($q) use ($today) {
+            $q->where('date', $today);
+        })->get();
+
+        // Ambil semua worktypes untuk dropdown edit
+        $this->worktypes = WorkTypes::all();
+
+        // Siapkan array times (08:00, 08:15, dst)
         $this->times = collect(range(8, 17))->flatMap(function ($hour) {
             return collect(['00', '15', '30', '45'])->map(fn($m) => sprintf('%02d:%s', $hour, $m));
         })->toArray();
 
-        // Ambil semua tanggal unik dari tabel schedules
-        $this->dates = Schedule::query()
-            ->orderBy('date')
-            ->pluck('date')
-            ->unique()
-            ->values()
-            ->toArray();
+        // Ambil semua schedule hari ini beserta relasi
+        $schedules = Schedule::with(['worker', 'worktype'])
+            ->where('date', $today)
+            ->get();
 
-        // Ambil semua data schedules dari tabel schedules
+        // Susun ulang agar mudah dipakai di view
         $this->schedules = [];
-        foreach (Schedule::all() as $schedule) {
+        foreach ($schedules as $schedule) {
             $date = $schedule->date;
-            $worker = $schedule->worker;
+            $workerId = $schedule->id_worker;
             if (!isset($this->schedules[$date])) $this->schedules[$date] = [];
-            if (!isset($this->schedules[$date][$worker])) $this->schedules[$date][$worker] = [];
-            $this->schedules[$date][$worker][] = [
-                'start' => substr($schedule->start, 0, 5), // format HH:MM
-                'duration' => $schedule->duration,
-                'plat' => $schedule->plat,
+            if (!isset($this->schedules[$date][$workerId])) $this->schedules[$date][$workerId] = [];
+            $this->schedules[$date][$workerId][] = [
+                'start'    => substr($schedule->waktu_mulai, 0, 5),
+                'duration' => $schedule->worktype->flatrate ?? 0,
+                'plat'     => $schedule->plat,
+                'id'       => $schedule->id,
             ];
         }
     }
 
-    public function editSchedule($date, $worker, $time)
+    public function editSchedule($date, $workerId, $time)
     {
-        // Ambil schedule dari database
         $schedule = Schedule::where('date', $date)
-            ->where('worker', $worker)
-            ->where('start', $time . ':00')
+            ->where('id_worker', $workerId)
+            ->where('waktu_mulai', $time . ':00')
             ->first();
 
         if ($schedule) {
             $this->editDate = $schedule->date;
-            $this->editWorker = $schedule->worker;
-            $this->editTime = substr($schedule->start, 0, 5);
-            $this->editDuration = $schedule->duration;
+            $this->editWorker = $schedule->id_worker;
+            $this->editTime = substr($schedule->waktu_mulai, 0, 5);
+            $this->editDuration = $schedule->duration; // id worktype
             $this->editPlat = $schedule->plat;
             $this->showModal = true;
         }
@@ -69,24 +77,20 @@ class ScheduleBoard extends Component
 
     public function updateSchedule()
     {
-        // Update schedule di database
         $schedule = Schedule::where('date', $this->editDate)
-            ->where('worker', $this->editWorker)
-            ->where('start', $this->editTime . ':00')
+            ->where('id_worker', $this->editWorker)
+            ->where('waktu_mulai', $this->editTime . ':00')
             ->first();
 
         if ($schedule) {
-            $schedule->duration = $this->editDuration;
+            $schedule->duration = $this->editDuration; // id worktype baru
             $schedule->plat = $this->editPlat;
             $schedule->save();
         }
 
-        // Refresh data schedules dari database
         $this->mount();
-
-        $this->showModal = false;
+        $this->reset(['editDate', 'editWorker', 'editTime', 'editDuration', 'editPlat', 'showModal']);
     }
-
 
     public function render()
     {
