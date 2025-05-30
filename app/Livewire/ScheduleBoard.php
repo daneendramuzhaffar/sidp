@@ -15,6 +15,11 @@ class ScheduleBoard extends Component
     public $schedules = [];
     public $worktypes = [];
     public $showModal = false;
+    public $timerScheduleId = null;
+    public $timerStart = null;
+    public $timerValue = 0;
+    public $editScheduleId;
+    
 
     // Untuk edit
     public $editDate, $editWorker, $editTime, $editDuration, $editPlat;
@@ -71,6 +76,7 @@ class ScheduleBoard extends Component
             $this->editTime = substr($schedule->waktu_mulai, 0, 5);
             $this->editDuration = $schedule->duration; // id worktype
             $this->editPlat = $schedule->plat;
+            $this->editScheduleId = $schedule->id;
             $this->showModal = true;
         }
     }
@@ -95,5 +101,43 @@ class ScheduleBoard extends Component
     public function render()
     {
         return view('livewire.schedule-board');
+    }
+
+    public function startTimer($scheduleId)
+    {
+        $this->timerScheduleId = $scheduleId;
+        $this->timerStart = time();
+        $this->timerValue = 0;
+
+        // Update status ke 'proses'
+        $schedule = Schedule::find($scheduleId);
+        if ($schedule) {
+            $schedule->status = 'proses';
+            $schedule->save();
+        }
+    }
+
+    public function stopTimer()
+    {
+    if ($this->timerScheduleId) {
+        $elapsed = $this->timerValue;
+        $schedule = Schedule::find($this->timerScheduleId);
+        if ($schedule) {
+            $schedule->timer = $elapsed;
+            $schedule->status = 'selesai'; // Update status ke selesai
+            $schedule->save();
+        }
+        $this->timerScheduleId = null;
+        $this->timerStart = null;
+        $this->timerValue = 0;
+        $this->mount();
+    }
+}
+
+    public function updateTimer()
+    {
+        if ($this->timerStart) {
+            $this->timerValue = time() - $this->timerStart;
+        }
     }
 }
