@@ -51,7 +51,7 @@
                                     </span>
                                 </td>
                             @else
-                                <td class="border border-neutral-200 dark:border-neutral-700 w-8 bg-white dark:bg-neutral-900"></td>
+                                <td class="border border-neutral-200 dark:border-neutral-700 min-w-24 bg-white dark:bg-neutral-900"></td>
                             @endif
                         @endforeach
                     </tr>
