@@ -14,7 +14,8 @@ class WorkTypes extends Model
         'nama_pekerjaan',
         'flatrate',
     ];
-
+    
+    public $timestamps = false;
     // Relasi ke Schedule
     public function schedules()
     {
