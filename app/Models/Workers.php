@@ -16,7 +16,7 @@ class Workers extends Model
         'mulai',
         'selesai',
     ];
-
+    public $timestamps = false;
     // Relasi ke Schedule
     public function schedules()
     {
