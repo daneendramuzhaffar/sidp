@@ -2,12 +2,12 @@
 
 namespace App\Livewire;
 
-use App\Models\Schedule;
 use App\Models\Workers;
-use App\Models\WorkTypes;
 use Livewire\Component;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Schedule;
+use App\Models\WorkTypes;
 use App\Exports\SchedulesExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ScheduleBoard extends Component
 {
