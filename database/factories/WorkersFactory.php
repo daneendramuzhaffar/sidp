@@ -26,7 +26,8 @@ class WorkersFactory extends Factory
         $endTime = sprintf('%02d:00:00', $endHour);
 
         return [
-            'nama' => $this->faker->randomElement($names),
+            // 'nama' => $this->faker->randomElement($names),
+            'nama' => $this->faker->name,
             'status' => $this->faker->randomElement($statuses),
             'mulai' => $startTime,
             'selesai' => $endTime,

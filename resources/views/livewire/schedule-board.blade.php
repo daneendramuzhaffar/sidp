@@ -23,7 +23,7 @@
                         @if ($loop->first)
                             <td rowspan="{{ count($workers) }}" class="border border-neutral-200 dark:border-neutral-700 px-2 py-1 bg-gray-50 dark:bg-neutral-900">{{ $date }}</td>
                         @endif
-                        <td class="border border-neutral-200 dark:border-neutral-700 px-1 py-1 bg-white dark:bg-neutral-900">{{ $worker->nama }}</td>
+                        <td class="border border-neutral-200 dark:border-neutral-700 px-1 py-1 bg-white dark:bg-neutral-900">{{ $worker->nama }}<br/>({{ $worker->status }})</td>
                         @php
                             $filledSlots = [];
                             $workerSchedules = collect($schedules[$date][$worker->id] ?? []);
@@ -51,7 +51,7 @@
                                     </span>
                                 </td>
                             @else
-                                <td class="border border-neutral-200 dark:border-neutral-700 w-8 bg-white dark:bg-neutral-900"></td>
+                                <td class="border border-neutral-200 dark:border-neutral-700 min-w-24 bg-white dark:bg-neutral-900"></td>
                             @endif
                         @endforeach
                     </tr>
@@ -60,6 +60,59 @@
         </tbody>
     </table>
 
+
+{{-- TAMBAH --}}
+<div class="p-4 bg-gray-50 dark:bg-neutral-900 mb-4 rounded">
+    <form wire:submit.prevent="tambahSchedule" class="flex flex-wrap gap-2 items-end ">
+        <div>
+            <label class="block text-xs mb-1">Teknisi</label>
+            <select wire:model="newWorker" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                <option value="">Pilih</option>
+                @foreach($workers as $w)
+                    <option value="{{ $w->id }}">{{ $w->nama }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs mb-1">No. SPP</label>
+            <input type="text" wire:model="newNoSpp" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+        </div>
+        <div>
+            <label class="block text-xs mb-1">Tanggal</label>
+            <input type="date" wire:model="newDate" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+        </div>
+        <div>
+            <label class="block text-xs mb-1 ">Jam Mulai</label>
+            <select wire:model="newTime" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                <option value="">Pilih</option>
+                @foreach($times as $t)
+                    <option value="{{ $t }}">{{ $t }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs mb-1">Jenis Pekerjaan</label>
+            <select wire:model="newWorktype" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                <option value="">Pilih</option>
+                @foreach($worktypes as $type)
+                    <option value="{{ $type->id }}">{{ $type->nama_pekerjaan ?? $type->nama }} ({{ $type->flatrate }}m)</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs mb-1">Plat</label>
+            <input type="text" wire:model="newPlat" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+        </div>
+        <div>
+            <label class="block text-xs mb-1">Catatan</label>
+            <input type="text" wire:model="newKeterangan" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded">Tambah Jadwal</button>
+    </form>
+</div>
+
+
+{{-- EDIT --}}
     @if ($showModal)
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all">
         <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
