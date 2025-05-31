@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('no_spp')->unique();
             $table->date('date');
-            $table->unsignedBigInteger('id_worker');
+            $table->unsignedBigInteger('id_worker')->nullable();
             $table->unsignedBigInteger('duration'); // in minutes
             $table->string('plat');
             $table->time('waktu_mulai')->default('00:00:00'); // default start time

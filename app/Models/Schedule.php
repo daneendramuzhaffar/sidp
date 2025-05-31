@@ -30,6 +30,11 @@ class Schedule extends Model
         return $this->belongsTo(Workers::class, 'id_worker');
     }
 
+    public function workers()
+    {
+        return $this->belongsToMany(Workers::class, 'worker_schedules', 'schedule_id', 'worker_id');
+    }
+
     // Relasi ke WorkTypes
     public function worktype()
     {
