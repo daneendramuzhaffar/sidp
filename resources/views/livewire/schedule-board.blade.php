@@ -61,7 +61,6 @@
             </tbody>
         </table>
 
-
     
 
 
@@ -85,7 +84,7 @@
                         wire:model.defer="editDuration"
                         min="15"
                         step="15"
-                        value="15"
+                        value="0"
                         class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
                     />
                     <span class="text-xs text-gray-500 dark:text-gray-400">Kelipatan 15 menit</span>
@@ -107,10 +106,12 @@
                                 Hasil: {{ $schedule->timer ?? 0 }} detik
                             </span>
                         </div>
-                    @elseif ($timerScheduleId === $editScheduleId)
+                    @elseif (isset($timers[$editScheduleId]))
                         <div class="flex items-center gap-2">
-                            <span wire:poll.1s="updateTimer" class="font-mono text-base text-gray-800 dark:text-gray-100">{{ gmdate('i:s', $timerValue) }}</span>
-                            <button wire:click="stopTimer" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition">Stop</button>
+                            <span wire:poll.1s="updateTimer" class="font-mono text-base text-gray-800 dark:text-gray-100">
+                                {{ gmdate('i:s', $timers[$editScheduleId]['value'] ?? 0) }}
+                            </span>
+                            <button wire:click="stopTimer({{ $editScheduleId }})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition">Stop</button>
                         </div>
                     @else
                         <button wire:click="startTimer({{ $editScheduleId }})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition">Start Timer</button>
@@ -125,6 +126,19 @@
         </div>
         @endif
     </div>
+
+    {{-- Ekxport --}}
+    <div>
+        <div class="flex justify-end mt-4">
+            <button
+                wire:click="exportExcel"
+                class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded shadow transition">
+                Export Excel
+            </button>
+        </div>
+    </div>
+    {{-- Ekxport --}}
+
     {{-- TAMBAH --}}
     <div class="p-6 bg-gray-50 dark:bg-neutral-900 mb-6 rounded-xl shadow border border-neutral-200 dark:border-neutral-700 max-w-6xl mt-12">
         <form wire:submit.prevent="tambahSchedule" class="grid grid-cols-1 md:grid-cols-4 gap-4">

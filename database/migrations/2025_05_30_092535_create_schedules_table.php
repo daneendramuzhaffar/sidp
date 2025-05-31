@@ -19,7 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('duration'); // in minutes
             $table->string('plat');
             $table->time('waktu_mulai')->default('00:00:00'); // default start time
-            $table->time('timer')->default('00:00:00'); // timer for tracking duration
+            $table->bigInteger('timer')->nullable()->default(0); // timer for tracking duration
             $table->time('waktu_selesai')->default('00:00:00'); // default end time
             $table->enum('status', ['belum dimulai', 'proses', 'selesai'])->default('belum dimulai');
             $table->string('keterangan')->nullable(); // optional notes or description

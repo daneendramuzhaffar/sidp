@@ -22,10 +22,11 @@ class ScheduleBoard extends Component
     public $timerStart = null;
     public $timerValue = 0;
     public $editScheduleId;
-    
+    public $timers = [];
+    public $editDuration = 0;
 
     // Untuk edit
-    public $editDate, $editWorker, $editTime, $editDuration, $editPlat, $editStatus;
+    public $editDate, $editWorker, $editTime, $editPlat, $editStatus;
     public $newWorker, $newDate, $newTime, $newWorktype, $newPlat, $newNoSpp, $newKeterangan,$newNamaMobil;
 
     public function mount()
@@ -61,6 +62,15 @@ class ScheduleBoard extends Component
                 'duration' => $schedule->worktype->flatrate ?? 0,
                 'plat'     => $schedule->plat,
                 'id'       => $schedule->id,
+            ];
+        }
+
+        foreach (Schedule::where('status', 'proses')->get() as $schedule) {
+            $start = $schedule->timer;
+            $elapsed = now()->timestamp - $start;
+            $this->timers[$schedule->id] = [
+                'start' => $start,
+                'value' => $elapsed,
             ];
         }
     }
@@ -160,39 +170,38 @@ class ScheduleBoard extends Component
 
     public function startTimer($scheduleId)
     {
-        $this->timerScheduleId = $scheduleId;
-        $this->timerStart = time();
-        $this->timerValue = 0;
+        $now = now()->timestamp;
+        $this->timers[$scheduleId] = [
+            'start' => $now,
+            'value' => 0,
+        ];
 
-        // Update status ke 'proses'
         $schedule = Schedule::find($scheduleId);
         if ($schedule) {
             $schedule->status = 'proses';
+            $schedule->timer = $now; // simpan timestamp start
             $schedule->save();
         }
     }
 
-    public function stopTimer()
+    public function stopTimer($scheduleId)
     {
-    if ($this->timerScheduleId) {
-        $elapsed = $this->timerValue;
-        $schedule = Schedule::find($this->timerScheduleId);
-        if ($schedule) {
-            $schedule->timer = $elapsed;
-            $schedule->status = 'selesai'; // Update status ke selesai
+        $schedule = Schedule::find($scheduleId);
+        if ($schedule && $schedule->status === 'proses') {
+            $start = $schedule->timer; // timestamp saat start
+            $elapsed = now()->timestamp - $start;
+            $schedule->timer = $elapsed; // replace dengan hasil stopwatch (detik)
+            $schedule->status = 'selesai';
             $schedule->save();
         }
-        $this->timerScheduleId = null;
-        $this->timerStart = null;
-        $this->timerValue = 0;
-        $this->mount();
+        unset($this->timers[$scheduleId]);
     }
-}
 
     public function updateTimer()
     {
-        if ($this->timerStart) {
-            $this->timerValue = time() - $this->timerStart;
+        foreach ($this->timers as $id => $timer) {
+            $elapsed = now()->timestamp - $timer['start'];
+            $this->timers[$id]['value'] = $elapsed;
         }
     }
 
