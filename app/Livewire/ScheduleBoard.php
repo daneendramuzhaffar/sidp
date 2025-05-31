@@ -83,25 +83,35 @@ class ScheduleBoard extends Component
     }
 
     public function updateSchedule()
-    {
-        $this->validate([
+{
+    $this->validate([
         'editStatus' => 'required|in:belum dimulai,proses,selesai',
-        ]);
-        $schedule = Schedule::where('date', $this->editDate)
-            ->where('id_worker', $this->editWorker)
-            ->where('waktu_mulai', $this->editTime . ':00')
-            ->first();
+        'editDuration' => 'required|integer|min:15',
+    ]);
 
-        if ($schedule) {
-            $schedule->duration = $this->editDuration; // id worktype baru
-            $schedule->plat = $this->editPlat;
-            $schedule->status = $this->editStatus; // update status jika perlu
-            $schedule->save();
-        }
+    // Ambil schedule berdasarkan ID (lebih aman)
+    $schedule = Schedule::find($this->editScheduleId);
 
-        $this->mount();
-        $this->reset(['editDate', 'editWorker', 'editTime', 'editDuration','editStatus', 'editPlat', 'showModal']);
+    if ($schedule) {
+        $schedule->plat = $this->editPlat;
+        $schedule->status = $this->editStatus;
+
+        // Tambah durasi ke waktu selesai lama
+        $waktuSelesaiLama = $schedule->waktu_selesai;
+        $waktuBaru = \Carbon\Carbon::createFromFormat('H:i:s', $waktuSelesaiLama)
+            ->addMinutes((int)$this->editDuration)
+            ->format('H:i:s');
+        $schedule->waktu_selesai = $waktuBaru;
+
+        // Optional: update duration jika ingin simpan total durasi baru
+        // $schedule->duration = ($schedule->duration ?? 0) + (int)$this->editDuration;
+
+        $schedule->save();
     }
+
+    $this->mount();
+    $this->reset(['editDate', 'editWorker', 'editTime', 'editDuration','editStatus', 'editPlat', 'showModal']);
+}
 
     public function tambahSchedule()
     {
