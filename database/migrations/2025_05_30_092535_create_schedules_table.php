@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('schedules', function (Blueprint $table) {
             $table->id();
-            $table->string('no_spp')->unique();
+            $table->string('no_spp');
             $table->date('date');
             $table->unsignedBigInteger('id_worker')->nullable();
             $table->unsignedBigInteger('duration'); // in minutes
