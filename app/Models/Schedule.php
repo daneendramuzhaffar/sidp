@@ -22,6 +22,7 @@ class Schedule extends Model
         'waktu_selesai',
         'status',
         'keterangan',
+        'nama_mobil',
     ];
 
     // Relasi ke Workers
