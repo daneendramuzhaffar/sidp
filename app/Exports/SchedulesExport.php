@@ -47,7 +47,8 @@ class SchedulesExport implements FromCollection, WithHeadings, WithMapping
             $schedule->worktype ? $schedule->worktype->flatrate : '',
             $schedule->waktu_mulai, 
             $schedule->waktu_selesai,
-            $schedule->timer ?? '', // atau ganti dengan field waktu aktual yang sesuai
+            // $schedule->timer ?? '', // atau ganti dengan field waktu aktual yang sesuai
+            gmdate('H:i:s', $schedule->timer) ?? '', // atau ganti dengan field waktu aktual yang sesuai
             $schedule->keterangan,
             $schedule->status,
         ];
