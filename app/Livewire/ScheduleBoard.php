@@ -6,6 +6,8 @@ use App\Models\Schedule;
 use App\Models\Workers;
 use App\Models\WorkTypes;
 use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\SchedulesExport;
 
 class ScheduleBoard extends Component
 {
@@ -24,7 +26,7 @@ class ScheduleBoard extends Component
 
     // Untuk edit
     public $editDate, $editWorker, $editTime, $editDuration, $editPlat, $editStatus;
-    public $newWorker, $newDate, $newTime, $newWorktype, $newPlat, $newNoSpp, $newKeterangan;
+    public $newWorker, $newDate, $newTime, $newWorktype, $newPlat, $newNoSpp, $newKeterangan,$newNamaMobil;
 
     public function mount()
     {
@@ -112,6 +114,7 @@ class ScheduleBoard extends Component
             'newTime' => 'required',
             'newWorktype' => 'required|exists:work_types,id',
             'newPlat' => 'required|string|max:11',
+            'newNamaMobil' => 'required|string|max:50',
         ]);
 
         $worktype = WorkTypes::find($this->newWorktype);
@@ -130,10 +133,11 @@ class ScheduleBoard extends Component
             'plat' => $this->newPlat,
             'keterangan' => $this->newKeterangan,
             'id_worktype' => $this->newWorktype,
+            'nama_mobil' => $this->newNamaMobil,
         ]);
 
         //reset input form 
-        $this->reset(['newWorker', 'newDate','newNoSpp', 'newTime','newKeterangan','newWorktype', 'newPlat']);
+        $this->reset(['newWorker', 'newDate','newNoSpp', 'newTime','newKeterangan','newWorktype', 'newPlat','newNamaMobil']);
 
         // Refresh data
         $this->mount();
@@ -181,4 +185,10 @@ class ScheduleBoard extends Component
             $this->timerValue = time() - $this->timerStart;
         }
     }
+
+    public function exportExcel()
+    {
+        return Excel::download(new SchedulesExport, 'jadwal.xlsx');
+    }
+
 }

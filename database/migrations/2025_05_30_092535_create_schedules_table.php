@@ -21,10 +21,10 @@ return new class extends Migration
             $table->time('waktu_mulai')->default('00:00:00'); // default start time
             $table->time('timer')->default('00:00:00'); // timer for tracking duration
             $table->time('waktu_selesai')->default('00:00:00'); // default end time
-            $table->enum('status', ['belum dimulai', 'proses', 'selesai'])->default('belum dimulai'); // pending, in_progress, completed, cancelled
+            $table->enum('status', ['belum dimulai', 'proses', 'selesai'])->default('belum dimulai');
             $table->string('keterangan')->nullable(); // optional notes or description
             $table->timestamps();
-
+            $table->string('nama_mobil');
             $table->foreign('id_worker')->references('id')->on('workers')->onDelete('cascade');
             $table->foreign('duration')->references('id')->on('work_types')->onDelete('cascade');
         });

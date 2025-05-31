@@ -17,6 +17,9 @@ Route::view('dashboard', 'dashboard')
 Route::get('/workers/create', [\App\Http\Controllers\WorkerController::class, 'create'])->name('workers.create');
 Route::post('/workers', [\App\Http\Controllers\WorkerController::class, 'store'])->name('workers.store');
 
+Route::get('/WorkTypes/create', [\App\Http\Controllers\DaftarKerjaController::class, 'create'])->name('WorkTypes.create');
+Route::post('/workTypes', [\App\Http\Controllers\DaftarKerjaController::class, 'store'])->name('WorkTypes.store');
+
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 

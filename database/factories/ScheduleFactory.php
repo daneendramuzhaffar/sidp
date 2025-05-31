@@ -52,6 +52,7 @@ class ScheduleFactory extends Factory
             'waktu_selesai' => $waktu_selesai,
             'status'        => $statuses[0],
             'keterangan'    => $this->faker->optional()->sentence(),
+            'nama_mobil'   => $this->faker->name(),
         ];
     }
 }
