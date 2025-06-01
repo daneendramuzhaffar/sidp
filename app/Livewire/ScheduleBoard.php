@@ -45,6 +45,7 @@ class ScheduleBoard extends Component
             $worker->colorClass = match($status) {
                 'aktif' => 'bg-green-500 text-white',
                 'sedang memperbaiki' => 'bg-yellow-400 text-gray-900',
+                'training' => 'bg-blue-500 text-white',
                 default => 'bg-red-500 text-white',
             };
             return $worker;
@@ -71,11 +72,23 @@ class ScheduleBoard extends Component
             $mulai = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->waktu_mulai);
             $selesai = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->waktu_selesai);
             $interval = 15; // menit
-            $colorClass = match ($schedule->status ?? 'belum dimulai') {
-                'selesai' => 'bg-green-500 dark:bg-green-500',
-                'proses' => 'bg-blue-500 dark:bg-blue-500',
+
+            $isOvertime = false;
+            if ($schedule->status === 'proses' && $schedule->timer) {
+                $now = now()->timestamp;
+                $start = $schedule->timer;
+                $elapsed = $now - $start;
+                $waktuSelesaiTimestamp = strtotime($schedule->date . ' ' . $schedule->waktu_selesai);
+                if ($now > $waktuSelesaiTimestamp) {
+                    $isOvertime = true;
+                }
+            }
+            $colorClass = match (true) {
+                $isOvertime => 'bg-red-600 text-white',
+                ($schedule->status ?? 'belum dimulai') === 'selesai' => 'bg-green-500 dark:bg-green-500',
+                ($schedule->status ?? 'belum dimulai') === 'proses' => 'bg-blue-500 dark:bg-blue-500',
                 default => 'bg-slate-500 dark:bg-slate-500',
-                };
+            };
             while ($mulai < $selesai) {
                 if (!isset($this->schedules[$date])) $this->schedules[$date] = [];
                 if (!isset($this->schedules[$date][$workerId])) $this->schedules[$date][$workerId] = [];
@@ -123,7 +136,9 @@ class ScheduleBoard extends Component
             $this->editPlat = $schedule->plat;
             $this->editScheduleId = $schedule->id;
             $this->showModal = true;
+            $this->mount();
         }
+        $this->mount();
     }
 
 
@@ -132,7 +147,7 @@ class ScheduleBoard extends Component
     {
         $this->validate([
             'editStatus' => 'required|in:belum dimulai,proses,selesai',
-            'editDuration' => 'required|integer|min:15',
+            'editDuration' => 'required|integer|min:0',
         ]);
 
         $schedule = Schedule::find($this->editScheduleId);
@@ -163,6 +178,7 @@ class ScheduleBoard extends Component
             $schedule->plat = $this->editPlat;
             $schedule->status = $this->editStatus;
             $schedule->waktu_selesai = $waktuBaru;
+            $schedule->keterangan = $this->showCatatan;
             $schedule->save();
             $this->showModal = false;
         }
@@ -181,42 +197,19 @@ class ScheduleBoard extends Component
             'newNamaMobil' => 'required|string|max:50',
         ]);
 
+        $worker= Workers::find($this->newWorker);
+        $allowedStatuses = ['aktif', 'sedang memperbaiki', 'training'];
+        if (!$worker || !in_array(strtolower($worker->status), $allowedStatuses)) {
+            $this->addError('newWorker', 'Status pekerja tidak mengizinkan input jadwal.');
+            return;
+        }   
+
         $worktype = WorkTypes::find($this->newWorktype);
 
         $waktuMulai = $this->newTime . ':00';
         $durasiMenit = $worktype->flatrate ?? 0;
         $waktuSelesai = date('H:i:s', strtotime($waktuMulai) + $durasiMenit * 60);
 
-        // // Cek apakah sudah ada jadwal yang sama (worker, tanggal, plat)
-        // $existing = Schedule::where('id_worker', $this->newWorker)
-        //     ->where('date', $this->newDate)
-        //     ->where('plat', $this->newPlat)
-        //     ->first();
-
-        // if ($existing) {
-        //     // Jika waktu selesai baru lebih besar, update waktu_selesai
-        //     if (strtotime($waktuSelesai) > strtotime($existing->waktu_selesai)) {
-        //         $existing->waktu_selesai = $waktuSelesai;
-        //         $existing->save();
-        //     }
-        // } else {
-        //     // Jika belum ada, buat entri baru
-        //     Schedule::create([
-                // 'id_worker' => $this->newWorker,
-                // 'date' => $this->newDate,
-                // 'no_spp' => $this->newNoSpp,
-                // 'waktu_mulai' => $waktuMulai,
-                // 'waktu_selesai' => $waktuSelesai,
-                // 'duration' => $this->newWorktype,
-                // 'plat' => $this->newPlat,
-                // 'keterangan' => $this->newKeterangan,
-                // 'id_worktype' => $this->newWorktype,
-                // 'nama_mobil' => $this->newNamaMobil,
-        //     ]);
-        // }
-
-        //reset input form 
-        
         $overlap = Schedule::where('id_worker', $this->newWorker)
         ->where('date', $this->newDate)
         ->where(function($q) use ($waktuMulai, $waktuSelesai) {
@@ -226,6 +219,7 @@ class ScheduleBoard extends Component
             });
         })
         ->exists();
+
         
         if ($overlap) {
             $this->addError('overlap', 'Jadwal bentrok dengan jadwal lain untuk teknisi ini!');
@@ -244,6 +238,7 @@ class ScheduleBoard extends Component
                 'nama_mobil' => $this->newNamaMobil,
             ]);
             $this->reset(['newWorker', 'newDate','newNoSpp', 'newTime','newKeterangan','newWorktype', 'newPlat','newNamaMobil']);
+            $this->mount();
         }
         
         // Refresh page

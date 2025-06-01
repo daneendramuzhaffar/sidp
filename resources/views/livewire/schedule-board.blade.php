@@ -1,5 +1,5 @@
 <div>
-    <div class="overflow-auto border border-neutral-200 dark:border-neutral-700 rounded-lg">
+    <div class="overflow-auto border border-neutral-200 dark:border-neutral-700 rounded-lg" >
         <table class="min-w-full text-sm relative">
             <thead class="bg-gray-100 dark:bg-neutral-800 z-10">
                 <tr class="bg-gray-100 dark:bg-neutral-800 text-center">
@@ -76,7 +76,7 @@
                                    
                                         
                                     @endphp
-                                    <td colspan="{{ $colspan }}" class="border border-neutral-200 dark:border-neutral-700 w-8 cursor-pointer transition hover:bg-grey-200 dark:hover:bg-grey-200 {{ $schedule['colorClass'] }}"
+                                    <td colspan="{{ $colspan }}" class="border border-neutral-200 dark:border-neutral-700 w-8 cursor-pointer transition hover:bg-grey-200 dark:hover:bg-grey-200 {{ $schedule['colorClass'] }} "
                                         wire:click="editSchedule('{{ $date }}', '{{ $worker->id }}', '{{ $time }}')">
                                         <span class="block text-xs font-semibold text-gray-800 dark:text-gray-100">
                                             {{ $schedule['plat'] }} ({{ $duration }}m)
@@ -116,7 +116,7 @@
             {{-- CATATAN(gw bikin show only, sama lebarin sus, hehe) --}}
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Catatan</label>
-                <input type="text" wire:model.defer="showCatatan" readonly class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition" />
+                <textarea type="text" wire:model.defer="showCatatan" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"></textarea>
             </div>
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Tambah Durasi (menit)</label>
@@ -280,7 +280,14 @@
                         {{ $errors->first('overlap') }}
                     </span>
                     @endif
-                    {{-- <span class="text-red-500 text-sm font-semibold min-w-full px-3 py-2">Lorem ipsum dolor, sit amet consectetur adipisicing elit. Est magnam sed cumque obcaecati?</span> --}}
+                @if ($errors->has('newWorker'))
+                    {{-- Show error message if no worker is selected --}}
+                    {{-- Show error message if there's an overlap --}}
+                    <span class="text-red-500 text-sm font-semibold min-w-fit px-3 py-2 rounded">
+                        {{ $errors->first('newWorker') }}
+                    </span>
+                    @endif
+                {{-- <span class="text-red-500 text-sm font-semibold min-w-full px-3 py-2">Lorem ipsum dolor, sit amet consectetur adipisicing elit. Est magnam sed cumque obcaecati?</span> --}}
             </div>
         </form>
     </div>
