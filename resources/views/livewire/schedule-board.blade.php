@@ -1,7 +1,7 @@
 <div>
     <div class="overflow-auto border border-neutral-200 dark:border-neutral-700 rounded-lg">
-        <table class="min-w-full table-fixed text-sm relative">
-            <thead clas>
+        <table class="min-w-full text-sm relative">
+            <thead class="bg-gray-100 dark:bg-neutral-800 z-10">
                 <tr class="bg-gray-100 dark:bg-neutral-800 text-center">
                     <th class="sticky left-0 top-0 z-30 bg-gray-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700" rowspan="2">Tanggal</th>
                     <th class="sticky left-14 top-0 z-30 bg-gray-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700" rowspan="2">Pekerja</th>
@@ -24,11 +24,12 @@
                             @if ($loop->first)
                                 <td rowspan="{{ count($workers) }}" class="sticky left-0 top-0 z-30 border border-neutral-200 dark:border-neutral-700 px-2 py-1 bg-gray-50 dark:bg-neutral-900">{{ $date }}</td>
                             @endif
-                            <td class="sticky left-14 top-0 z-30 border border-neutral-200 dark:border-neutral-700 px-1 py-1 bg-white dark:bg-neutral-900" >
-                                <button wire:click="showEditWorker({{ $worker->id }})" class="text-blue-600 hover:underline font-semibold">
-                                {{ $worker->nama }}
-                            </button>
-                            <br/>({{ $worker->status }})({{ $worker->status }})</td>
+                            <td class="sticky left-14 top-0 z-30 border border-neutral-200 dark:border-neutral-700 px-1 py-1 {{ $worker->colorClass }}">
+                                <button wire:click="showEditWorker({{ $worker->id }})" class="hover:underline font-semibold">
+                                    {{ $worker->nama }}
+                                </button>
+                                <br/>({{ $worker->status }})
+                            </td>
                             {{-- <td class="border border-neutral-200 dark:border-neutral-700 px-1 py-1 bg-white dark:bg-neutral-900">{{ $worker->nama }} ({{ $worker->status }})</td> --}}
                             @php
                                 $filledSlots = [];
@@ -53,14 +54,14 @@
                                         // Hitung durasi
                                         if ($waktuMulai && $waktuSelesai) {
                                             $duration = (strtotime($waktuSelesai)- strtotime($waktuMulai)) / 60; // mnt
-                                            $colspan = $duration/15;
+                                            $colspan = ceil($duration / 15); // 15 menit per slot 
                                         } else{
                                             $duration = 15;
                                             $colspan = 1;
                                         }
                                         // isi ijo
                                         $filledSlots = array_merge($filledSlots, collect($times)
-                                            ->filter(fn($t) => strtotime($t) >= strtotime($time) && strtotime($t) < strtotime("+{$duration} minutes", strtotime($time)))
+                                            ->filter(fn($t) => strtotime($t) >= strtotime($time) && strtotime($t) < strtotime("+".($colspan*15)." minutes", strtotime($time)))
                                             ->values()
                                             ->toArray());
                                             
@@ -72,15 +73,10 @@
                                         //     ->values()
                                         //     ->toArray();
 
-                                        $status = $schedule['status'] ?? 'belum dimulai';
-                                        $colorClass = match ($status) {
-                                            'selesai' => 'bg-green-500 dark:bg-green-500',
-                                            'proses' => 'bg-blue-500 dark:bg-blue-500',
-                                            default => 'bg-slate-500 dark:bg-slate-500',
-                                        };
+                                   
                                         
                                     @endphp
-                                    <td colspan="{{ $colspan }}" class="border border-neutral-200 dark:border-neutral-700 w-8 cursor-pointer transition hover:bg-grey-200 dark:hover:bg-grey-200 {{ $colorClass }}"
+                                    <td colspan="{{ $colspan }}" class="border border-neutral-200 dark:border-neutral-700 w-8 cursor-pointer transition hover:bg-grey-200 dark:hover:bg-grey-200 {{ $schedule['colorClass'] }}"
                                         wire:click="editSchedule('{{ $date }}', '{{ $worker->id }}', '{{ $time }}')">
                                         <span class="block text-xs font-semibold text-gray-800 dark:text-gray-100">
                                             {{ $schedule['plat'] }} ({{ $duration }}m)
@@ -95,111 +91,122 @@
                 @endforeach
             </tbody>
         </table>
-
-    
-
-
-    {{-- EDIT --}}
-        @if ($showModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all">
-            <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
-                <button wire:click="$set('showModal', false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition" aria-label="Tutup">
-                    &times;
-                </button>
-                <h2 class="text-xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Edit Schedule</h2>
-                {{-- SHOW No SPP --}}
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">No.spp</label>
-                    <input type="text" wire:model.defer="showNoSpp" readonly
-                        class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition" />
-                </div>
-                {{-- EDIT PLAT --}}
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Plat Nomor</label>
-                    <input type="text" wire:model.defer="editPlat"
-                        class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition" />
-                </div>
-                {{-- CATATAN(gw bikin show only, sama lebarin sus, hehe) --}}
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Catatan</label>
-                    <input type="text" wire:model.defer="showCatatan" readonly
-                        class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition" />
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Tambah Durasi (menit)</label>
-                    <input
-                        type="number"
-                        wire:model.defer="editDuration"
-                        min="15"
-                        step="15"
-                        value="0"
-                        class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
-                    />
-                    <span class="text-xs text-gray-500 dark:text-gray-400">Kelipatan 15 menit</span>
-                </div>
-                <div class="mb-6 text-sm text-gray-500 dark:text-gray-400">
-                    Detail Waktu sekarang:
-                    {{optional($worktypes->firstWhere('id', $durationAsli))->flatrate ?? '-'}} menit
-                    ({{ optional($worktypes->firstWhere('id', $durationAsli))->nama_pekerjaan ?? optional($worktypes->firstWhere('id', $durationAsli))->nama ?? '-' }})
-                </div>
-                <div class="flex justify-end gap-2">
-                    {{-- TIMER --}}
-                    @php
-                        $schedule = \App\Models\Schedule::find($editScheduleId);
-                    @endphp
-
-                    @if ($schedule && $schedule->status === 'selesai')
-                        <div class="flex items-center gap-2">
-                            <span class="font-mono text-base text-gray-800 dark:text-gray-100">
-                                Hasil: {{ $schedule->timer ?? 0 }} detik
-                            </span>
-                        </div>
-                    @elseif (isset($timers[$editScheduleId]))
-                        <div class="flex items-center gap-2">
-                            <span wire:poll.1s="updateTimer" class="font-mono text-base text-gray-800 dark:text-gray-100">
-                                {{ gmdate('i:s', $timers[$editScheduleId]['value'] ?? 0) }}
-                            </span>
-                            <button wire:click="stopTimer({{ $editScheduleId }})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition">Stop</button>
-                        </div>
-                    @else
-                        <button wire:click="startTimer({{ $editScheduleId }})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition">Start Timer</button>
-                    @endif
-                    {{-- END TIMER --}}
-                    <button wire:click="$set('showModal', false)" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition">Batal</button>
-                    <button wire:click="updateSchedule" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold">
-                        Simpan
-                    </button>
-                </div>
-            </div>
-        </div>
-        @endif
-        @if ($editWorkerId)
-        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all">
-            <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
-                <button @click="open = false; $wire.editWorkerId = null" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition" aria-label="Tutup">
-                    &times;
-                </button>
-                <h2 class="text-xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Edit Pekerja</h2>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Nama</label>
-                    <input type="text" wire:model.defer="editWorkerNama"
-                        class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100" />
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Status</label>
-                    <input type="text" wire:model.defer="editWorkerStatus"
-                        class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100" />
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button @click="open = false; $wire.editWorkerId = null" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition">Batal</button>
-                    <button wire:click="updateWorker" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold">
-                        Simpan
-                    </button>
-                </div>
-            </div>
-        </div>
-        @endif
     </div>
+
+    {{-- EDIT MODAL--}}
+    @if ($showModal)
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all">
+        <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <button wire:click="$set('showModal', false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition" aria-label="Tutup">
+                &times;
+            </button>
+            <h2 class="text-xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Edit Schedule</h2>
+            {{-- SHOW No SPP --}}
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">No.spp</label>
+                <input type="text" wire:model.defer="showNoSpp" readonly
+                    class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition" />
+            </div>
+            {{-- EDIT PLAT --}}
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Plat Nomor</label>
+                <input type="text" wire:model.defer="editPlat"
+                    class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition" />
+            </div>
+            {{-- CATATAN(gw bikin show only, sama lebarin sus, hehe) --}}
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Catatan</label>
+                <input type="text" wire:model.defer="showCatatan" readonly class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition" />
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Tambah Durasi (menit)</label>
+                <input
+                    type="number"
+                    wire:model.defer="editDuration"
+                    min="15"
+                    step="15"
+                    value="0"
+                    class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
+                />
+                <span class="text-xs text-gray-500 dark:text-gray-400">Kelipatan 15 menit</span>
+            </div>
+            <div class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+                Detail Waktu sekarang:
+                {{optional($worktypes->firstWhere('id', $durationAsli))->flatrate ?? '-'}} menit
+                ({{ optional($worktypes->firstWhere('id', $durationAsli))->nama_pekerjaan ?? optional($worktypes->firstWhere('id', $durationAsli))->nama ?? '-' }})
+            </div>
+            @if ($errors->has('overlap'))
+                <div class="mb-2 px-3 py-2 bg-red-500 text-white rounded text-center">
+                    {{ $errors->first('overlap') }}
+                </div>
+            @endif
+            <div class="flex justify-end gap-2">
+                {{-- TIMER --}}
+                @php
+                    $schedule = \App\Models\Schedule::find($editScheduleId);
+                @endphp
+
+                @if ($schedule && $schedule->status === 'selesai')
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono text-base text-gray-800 dark:text-gray-100">
+                            Hasil: {{ $schedule->timer ?? 0 }} detik
+                        </span>
+                    </div>
+                @elseif (isset($timers[$editScheduleId]))
+                    <div class="flex items-center gap-2">
+                        <span wire:poll.1s="updateTimer" class="font-mono text-base text-gray-800 dark:text-gray-100">
+                            {{ gmdate('i:s', $timers[$editScheduleId]['value'] ?? 0) }}
+                        </span>
+                        <button wire:click="stopTimer({{ $editScheduleId }})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition">Stop</button>
+                    </div>
+                @else
+                    <button wire:click="startTimer({{ $editScheduleId }})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition">Start Timer</button>
+                @endif
+                {{-- END TIMER --}}
+                <button wire:click="$set('showModal', false)" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition">Batal</button>
+                <button wire:click="updateSchedule" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold">
+                    Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+    @if ($editWorkerId)
+    <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all">
+        <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <button wire:click="cancelEditWorker" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition" aria-label="Tutup">
+                &times;
+            </button>
+            <h2 class="text-xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Edit Pekerja</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Nama</label>
+                <input type="text" wire:model.defer="editWorkerNama"
+                    class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100" />
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Status</label>
+                <select wire:model.defer="editWorkerStatus"
+                    class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100">
+                    <option value="">Pilih Status</option>
+                    <option value="aktif">Aktif</option>
+                    <option value="sedang memperbaiki">Sedang Memperbaiki</option>
+                    <option value="izin">Izin</option>
+                    <option value="sakit">Sakit</option>
+                    <option value="cuti">Cuti</option>
+                    <option value="training">Training</option>
+                    <option value="off">Off</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button wire:click="cancelEditWorker" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition">Batal</button>
+                <button wire:click="updateWorker" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold">
+                    Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+    {{-- EDIT MODAL END --}}
 
     {{-- Ekxport --}}
     <div>
@@ -263,8 +270,17 @@
                 <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Catatan</label>
                 <input type="text" wire:model="newKeterangan" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
             </div>
-            <div class="flex items-end">
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold shadow transition cursor-pointer">Tambah Jadwal</button>
+            <div class="flex items-center gap-4">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold shadow transition cursor-pointer min-w-fit">
+                    Tambah Jadwal
+                </button>
+                @if ($errors->has('overlap'))
+                    {{-- Show error message if there's an overlap --}}
+                    <span class="text-red-500 text-sm font-semibold min-w-fit px-3 py-2 rounded">
+                        {{ $errors->first('overlap') }}
+                    </span>
+                    @endif
+                    {{-- <span class="text-red-500 text-sm font-semibold min-w-full px-3 py-2">Lorem ipsum dolor, sit amet consectetur adipisicing elit. Est magnam sed cumque obcaecati?</span> --}}
             </div>
         </form>
     </div>

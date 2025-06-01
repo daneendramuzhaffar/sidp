@@ -35,14 +35,24 @@ class ScheduleBoard extends Component
 
     public function mount()
     {
+        $this->schedules = [];
         $today = date('Y-m-d');
         $this->dates = [$today];
 
         // Ambil semua pekerja yang punya jadwal hari ini
-        $this->workers = Workers::All();
+        $this->workers = Workers::all()->map(function($worker) {
+            $status = strtolower($worker->status);
+            $worker->colorClass = match($status) {
+                'aktif' => 'bg-green-500 text-white',
+                'sedang memperbaiki' => 'bg-yellow-400 text-gray-900',
+                default => 'bg-red-500 text-white',
+            };
+            return $worker;
+        });
 
         // Ambil semua worktypes untuk dropdown edit
         $this->worktypes = WorkTypes::all();
+        
 
         // Siapkan array times (08:00, 08:15, dst)
         $this->times = collect(range(8, 17))->flatMap(function ($hour) {
@@ -61,6 +71,11 @@ class ScheduleBoard extends Component
             $mulai = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->waktu_mulai);
             $selesai = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->waktu_selesai);
             $interval = 15; // menit
+            $colorClass = match ($schedule->status ?? 'belum dimulai') {
+                'selesai' => 'bg-green-500 dark:bg-green-500',
+                'proses' => 'bg-blue-500 dark:bg-blue-500',
+                default => 'bg-slate-500 dark:bg-slate-500',
+                };
             while ($mulai < $selesai) {
                 if (!isset($this->schedules[$date])) $this->schedules[$date] = [];
                 if (!isset($this->schedules[$date][$workerId])) $this->schedules[$date][$workerId] = [];
@@ -72,6 +87,7 @@ class ScheduleBoard extends Component
                     'plat'     => $schedule->plat,
                     'id'       => $schedule->id,
                     'status'   => $schedule->status ?? 'belum dimulai',
+                    'colorClass' => $colorClass,
                 ];
                 $mulai->addMinutes($interval);
             }
@@ -113,35 +129,45 @@ class ScheduleBoard extends Component
 
     // UPDATE TABEL SCHEDULE
     public function updateSchedule()
-{
-    $this->validate([
-        'editStatus' => 'required|in:belum dimulai,proses,selesai',
-        'editDuration' => 'required|integer|min:15',
-    ]);
+    {
+        $this->validate([
+            'editStatus' => 'required|in:belum dimulai,proses,selesai',
+            'editDuration' => 'required|integer|min:15',
+        ]);
 
-    // Ambil schedule berdasarkan ID (lebih aman)
-    $schedule = Schedule::find($this->editScheduleId);
+        $schedule = Schedule::find($this->editScheduleId);
 
-    if ($schedule) {
-        $schedule->plat = $this->editPlat;
-        $schedule->status = $this->editStatus;
+        if ($schedule) {
+            $waktuSelesaiLama = $schedule->waktu_selesai;
+            $waktuBaru = \Carbon\Carbon::createFromFormat('H:i:s', $waktuSelesaiLama)
+                ->addMinutes((int)$this->editDuration)
+                ->format('H:i:s');
 
-        // Tambah durasi ke waktu selesai lama
-        $waktuSelesaiLama = $schedule->waktu_selesai;
-        $waktuBaru = \Carbon\Carbon::createFromFormat('H:i:s', $waktuSelesaiLama)
-            ->addMinutes((int)$this->editDuration)
-            ->format('H:i:s');
-        $schedule->waktu_selesai = $waktuBaru;
+            // Cek overlap dengan jadwal lain (kecuali dirinya sendiri)
+            $overlap = Schedule::where('id_worker', $schedule->id_worker)
+                ->where('date', $schedule->date)
+                ->where('id', '!=', $schedule->id)
+                ->where(function($q) use ($schedule, $waktuBaru) {
+                    $q->where(function($q2) use ($schedule, $waktuBaru) {
+                        $q2->where('waktu_mulai', '<', $waktuBaru)
+                        ->where('waktu_selesai', '>', $schedule->waktu_mulai);
+                    });
+                })
+                ->exists();
 
-        // Optional: update duration jika ingin simpan total durasi baru
-        // $schedule->duration = ($schedule->duration ?? 0) + (int)$this->editDuration;
+            if ($overlap) {
+                $this->addError('overlap', 'Tidak Bisa Menambah Druasi Karena Sudah Ada Jadwal Lain!');
+                return;
+            }
 
-        $schedule->save();
+            $schedule->plat = $this->editPlat;
+            $schedule->status = $this->editStatus;
+            $schedule->waktu_selesai = $waktuBaru;
+            $schedule->save();
+            $this->showModal = false;
+        }
+        $this->mount();
     }
-    $this->mount(); 
-    return redirect()->route('dashboard');
-
-}
     // TAMBAH SCHEDULE BARU
     public function tambahSchedule()
     {
@@ -161,20 +187,50 @@ class ScheduleBoard extends Component
         $durasiMenit = $worktype->flatrate ?? 0;
         $waktuSelesai = date('H:i:s', strtotime($waktuMulai) + $durasiMenit * 60);
 
-        // Cek apakah sudah ada jadwal yang sama (worker, tanggal, plat)
-        $existing = Schedule::where('id_worker', $this->newWorker)
-            ->where('date', $this->newDate)
-            ->where('plat', $this->newPlat)
-            ->first();
+        // // Cek apakah sudah ada jadwal yang sama (worker, tanggal, plat)
+        // $existing = Schedule::where('id_worker', $this->newWorker)
+        //     ->where('date', $this->newDate)
+        //     ->where('plat', $this->newPlat)
+        //     ->first();
 
-        if ($existing) {
-            // Jika waktu selesai baru lebih besar, update waktu_selesai
-            if (strtotime($waktuSelesai) > strtotime($existing->waktu_selesai)) {
-                $existing->waktu_selesai = $waktuSelesai;
-                $existing->save();
-            }
-        } else {
-            // Jika belum ada, buat entri baru
+        // if ($existing) {
+        //     // Jika waktu selesai baru lebih besar, update waktu_selesai
+        //     if (strtotime($waktuSelesai) > strtotime($existing->waktu_selesai)) {
+        //         $existing->waktu_selesai = $waktuSelesai;
+        //         $existing->save();
+        //     }
+        // } else {
+        //     // Jika belum ada, buat entri baru
+        //     Schedule::create([
+                // 'id_worker' => $this->newWorker,
+                // 'date' => $this->newDate,
+                // 'no_spp' => $this->newNoSpp,
+                // 'waktu_mulai' => $waktuMulai,
+                // 'waktu_selesai' => $waktuSelesai,
+                // 'duration' => $this->newWorktype,
+                // 'plat' => $this->newPlat,
+                // 'keterangan' => $this->newKeterangan,
+                // 'id_worktype' => $this->newWorktype,
+                // 'nama_mobil' => $this->newNamaMobil,
+        //     ]);
+        // }
+
+        //reset input form 
+        
+        $overlap = Schedule::where('id_worker', $this->newWorker)
+        ->where('date', $this->newDate)
+        ->where(function($q) use ($waktuMulai, $waktuSelesai) {
+            $q->where(function($q2) use ($waktuMulai, $waktuSelesai) {
+                $q2->where('waktu_mulai', '<', $waktuSelesai)
+                ->where('waktu_selesai', '>', $waktuMulai);
+            });
+        })
+        ->exists();
+        
+        if ($overlap) {
+            $this->addError('overlap', 'Jadwal bentrok dengan jadwal lain untuk teknisi ini!');
+            return;
+        } else{
             Schedule::create([
                 'id_worker' => $this->newWorker,
                 'date' => $this->newDate,
@@ -187,14 +243,11 @@ class ScheduleBoard extends Component
                 'id_worktype' => $this->newWorktype,
                 'nama_mobil' => $this->newNamaMobil,
             ]);
+            $this->reset(['newWorker', 'newDate','newNoSpp', 'newTime','newKeterangan','newWorktype', 'newPlat','newNamaMobil']);
         }
-
-        //reset input form 
-        $this->reset(['newWorker', 'newDate','newNoSpp', 'newTime','newKeterangan','newWorktype', 'newPlat','newNamaMobil']);
-
+        
         // Refresh page
         $this->mount();
-        return redirect()->route('dashboard');
     }
 
     // RENDER
@@ -218,6 +271,7 @@ class ScheduleBoard extends Component
             $schedule->timer = $now; // simpan timestamp start
             $schedule->save();
         }
+        $this->mount();
     }
 
     // STOP TIMER
@@ -232,6 +286,7 @@ class ScheduleBoard extends Component
             $schedule->save();
         }
         unset($this->timers[$scheduleId]);
+        $this->mount();
     }
 
     // UPDATE TIMER
@@ -241,6 +296,7 @@ class ScheduleBoard extends Component
             $elapsed = now()->timestamp - $timer['start'];
             $this->timers[$id]['value'] = $elapsed;
         }
+        $this->mount();
     }
 
     // EXPORT TO EXCEL
@@ -251,29 +307,46 @@ class ScheduleBoard extends Component
 
     // EDIT WORKER
     public function showEditWorker($workerId)
-    {
-        $worker = \App\Models\Workers::find($workerId);
-        if ($worker) {
-            $this->editWorkerId = $worker->id;
-            $this->editWorkerNama = $worker->nama;
-            $this->editWorkerStatus = $worker->status;
-            $this->dispatch('showEditWorkerModal');
-        }
+{
+    $worker = Workers::find($workerId);
+    if ($worker) {
+        $this->editWorkerId = $worker->id;
+        $this->editWorkerNama = $worker->nama;
+        $this->editWorkerStatus = $worker->status;
+        // JANGAN panggil $this->mount() di sini!
+        $this->dispatch('showEditWorkerModal');
+        $this->mount();
     }
+}
 
     public function updateWorker()
     {
-        $worker = \App\Models\Workers::find($this->editWorkerId);
+        $worker = Workers::find($this->editWorkerId);
         if ($worker) {
             $worker->nama = $this->editWorkerNama;
             $worker->status = $this->editWorkerStatus;
             $worker->save();
-            $this->editWorkerId = null;
-            $this->editWorkerNama = '';
-            $this->editWorkerStatus = '';
-            $this->dispatch('closeEditWorkerModal');
-            $this->mount();
         }
+
+        // Reset property edit worker
+        $this->editWorkerId = null;
+        $this->editWorkerNama = '';
+        $this->editWorkerStatus = '';
+
+        // Tutup modal
+        $this->dispatch('closeEditWorkerModal');
+
+        // Refresh data dan warna worker
+        $this->mount();
+    }
+
+    public function cancelEditWorker()
+    {
+        $this->editWorkerId = null;
+        $this->editWorkerNama = '';
+        $this->editWorkerStatus = '';
+        $this->dispatch('closeEditWorkerModal');
+        $this->mount();
     }
 
 
