@@ -25,7 +25,7 @@
                                 <td rowspan="{{ count($workers) }}" class="sticky left-0 top-0 z-30 border border-neutral-200 dark:border-neutral-700 px-2 py-1 bg-gray-50 dark:bg-neutral-900">{{ $date }}</td>
                             @endif
                             <td class="sticky left-14 top-0 z-30 border border-neutral-200 dark:border-neutral-700 px-1 py-1 {{ $worker->colorClass }}">
-                                <button wire:click="showEditWorker({{ $worker->id }})" class="hover:underline font-semibold">
+                                <button wire:click="showEditWorker({{ $worker->id }})" class="hover:underline font-semibold cursor-pointer">
                                     {{ $worker->nama }}
                                 </button>
                                 <br/>({{ $worker->status }})
@@ -97,7 +97,7 @@
     @if ($showModal)
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all">
         <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
-            <button wire:click="$set('showModal', false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition" aria-label="Tutup">
+            <button wire:click="$set('showModal', false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition cursor-pointer text-2xl" aria-label="Tutup">
                 &times;
             </button>
             <h2 class="text-xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Edit Schedule</h2>
@@ -131,9 +131,20 @@
                 <span class="text-xs text-gray-500 dark:text-gray-400">Kelipatan 15 menit</span>
             </div>
             <div class="mb-6 text-sm text-gray-500 dark:text-gray-400">
-                Detail Waktu sekarang:
-                {{optional($worktypes->firstWhere('id', $durationAsli))->flatrate ?? '-'}} menit
-                ({{ optional($worktypes->firstWhere('id', $durationAsli))->nama_pekerjaan ?? optional($worktypes->firstWhere('id', $durationAsli))->nama ?? '-' }})
+                @php
+                    $schedule = \App\Models\Schedule::find($editScheduleId);
+                    $selisihMenit = null;
+                    if ($schedule && $schedule->waktu_mulai && $schedule->waktu_selesai) {
+                        $start = strtotime($schedule->waktu_mulai);
+                        $end = strtotime($schedule->waktu_selesai);
+                        $selisihMenit = ($end - $start) / 60;
+                    }
+                @endphp
+                Durasi Jadwal: 
+                {{ $selisihMenit !== null ? $selisihMenit . ' menit' : '-' }}
+                @if($schedule)
+                    ({{ substr($schedule->waktu_mulai, 0, 5) }} - {{ substr($schedule->waktu_selesai, 0, 5) }})
+                @endif
             </div>
             @if ($errors->has('overlap'))
                 <div class="mb-2 px-3 py-2 bg-red-500 text-white rounded text-center">
@@ -149,7 +160,7 @@
                 @if ($schedule && $schedule->status === 'selesai')
                     <div class="flex items-center gap-2">
                         <span class="font-mono text-base text-gray-800 dark:text-gray-100">
-                            Hasil: {{ $schedule->timer ?? 0 }} detik
+                            Hasil: {{ gmdate('H:i:s', $schedule->timer) ?? 0 }} detik
                         </span>
                     </div>
                 @elseif (isset($timers[$editScheduleId]))
@@ -157,14 +168,14 @@
                         <span wire:poll.1s="updateTimer" class="font-mono text-base text-gray-800 dark:text-gray-100">
                             {{ gmdate('i:s', $timers[$editScheduleId]['value'] ?? 0) }}
                         </span>
-                        <button wire:click="stopTimer({{ $editScheduleId }})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition">Stop</button>
+                        <button wire:click="stopTimer({{ $editScheduleId }})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition cursor-pointer">Stop</button>
                     </div>
                 @else
-                    <button wire:click="startTimer({{ $editScheduleId }})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition">Start Timer</button>
+                    <button wire:click="startTimer({{ $editScheduleId }})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition cursor-pointer">Start Timer</button>
                 @endif
                 {{-- END TIMER --}}
-                <button wire:click="$set('showModal', false)" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition">Batal</button>
-                <button wire:click="updateSchedule" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold">
+                <button wire:click="$set('showModal', false)" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition cursor-pointer">Batal</button>
+                <button wire:click="updateSchedule" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold cursor-pointer">
                     Simpan
                 </button>
             </div>
@@ -174,7 +185,7 @@
     @if ($editWorkerId)
     <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all">
         <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
-            <button wire:click="cancelEditWorker" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition" aria-label="Tutup">
+            <button wire:click="cancelEditWorker" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition cursor-pointer text-2xl" aria-label="Tutup">
                 &times;
             </button>
             <h2 class="text-xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Edit Pekerja</h2>
@@ -198,8 +209,8 @@
                 </select>
             </div>
             <div class="flex justify-end gap-2">
-                <button wire:click="cancelEditWorker" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition">Batal</button>
-                <button wire:click="updateWorker" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold">
+                <button wire:click="cancelEditWorker" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition cursor-pointer">Batal</button>
+                <button wire:click="updateWorker" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold cursor-pointer">
                     Simpan
                 </button>
             </div>
@@ -210,10 +221,10 @@
 
     {{-- Ekxport --}}
     <div>
-        <div class="flex justify-end mt-4">
+        <div class="flex justify-end mt-12">
             <button
                 wire:click="exportExcel"
-                class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded shadow transition">
+                class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded shadow transition cursor-pointer">
                 Export Excel
             </button>
         </div>

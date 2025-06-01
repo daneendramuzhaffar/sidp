@@ -39,18 +39,6 @@ class ScheduleBoard extends Component
         $today = date('Y-m-d');
         $this->dates = [$today];
 
-        // Ambil semua pekerja yang punya jadwal hari ini
-        $this->workers = Workers::all()->map(function($worker) {
-            $status = strtolower($worker->status);
-            $worker->colorClass = match($status) {
-                'aktif' => 'bg-green-500 text-white',
-                'sedang memperbaiki' => 'bg-yellow-400 text-gray-900',
-                'training' => 'bg-blue-500 text-white',
-                default => 'bg-red-500 text-white',
-            };
-            return $worker;
-        });
-
         // Ambil semua worktypes untuk dropdown edit
         $this->worktypes = WorkTypes::all();
         
@@ -73,20 +61,18 @@ class ScheduleBoard extends Component
             $selesai = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->waktu_selesai);
             $interval = 15; // menit
 
-            $isOvertime = false;
-            if ($schedule->status === 'proses' && $schedule->timer) {
-                $now = now()->timestamp;
-                $start = $schedule->timer;
-                $elapsed = $now - $start;
-                $waktuSelesaiTimestamp = strtotime($schedule->date . ' ' . $schedule->waktu_selesai);
-                if ($now > $waktuSelesaiTimestamp) {
-                    $isOvertime = true;
-                }
-            }
+            $now = now()->timestamp;
+            $waktuSelesaiTimestamp = strtotime($schedule->date . ' ' . $schedule->waktu_selesai);
+
+            // Pewarnaan schedule:
             $colorClass = match (true) {
-                $isOvertime => 'bg-red-600 text-white',
+                // Stopwatch berjalan & sudah overtime
+                ($schedule->status === 'proses' && $now > $waktuSelesaiTimestamp) => 'bg-red-600 text-white',
+                // Stopwatch berjalan & belum overtime
+                ($schedule->status === 'proses' && $now <= $waktuSelesaiTimestamp) => 'bg-blue-500 dark:bg-blue-500',
+                // Sudah selesai
                 ($schedule->status ?? 'belum dimulai') === 'selesai' => 'bg-green-500 dark:bg-green-500',
-                ($schedule->status ?? 'belum dimulai') === 'proses' => 'bg-blue-500 dark:bg-blue-500',
+                // Default
                 default => 'bg-slate-500 dark:bg-slate-500',
             };
             while ($mulai < $selesai) {
@@ -136,7 +122,6 @@ class ScheduleBoard extends Component
             $this->editPlat = $schedule->plat;
             $this->editScheduleId = $schedule->id;
             $this->showModal = true;
-            $this->mount();
         }
         $this->mount();
     }
@@ -211,6 +196,20 @@ class ScheduleBoard extends Component
         $durasiMenit = $worktype->flatrate ?? 0;
         $waktuSelesai = date('H:i:s', strtotime($waktuMulai) + $durasiMenit * 60);
 
+        // --- CEK JAM KERJA PEKERJA ---
+        if ($worker && $worker->mulai && $worker->selesai) {
+            $jamMulaiWorker = strlen($worker->mulai) === 5 ? $worker->mulai . ':00' : $worker->mulai;
+            $jamSelesaiWorker = strlen($worker->selesai) === 5 ? $worker->selesai . ':00' : $worker->selesai;
+
+            if (
+                strtotime($waktuMulai) < strtotime($jamMulaiWorker) ||
+                strtotime($waktuSelesai) > strtotime($jamSelesaiWorker)
+            ) {
+                $this->addError('overlap', 'Jadwal di luar jam kerja pekerja! ('.substr($worker->mulai,0,5).' - '.substr($worker->selesai,0,5).')');
+                return;
+            }
+        }
+
         $overlap = Schedule::where('id_worker', $this->newWorker)
         ->where('date', $this->newDate)
         ->where(function($q) use ($waktuMulai, $waktuSelesai) {
@@ -249,6 +248,17 @@ class ScheduleBoard extends Component
     // RENDER
     public function render()
     {
+        $this->workers = Workers::all()->map(function($worker) {
+            $status = strtolower($worker->status);
+            $worker->colorClass = match($status) {
+                'aktif' => 'bg-green-500 text-white',
+                'sedang memperbaiki' => 'bg-yellow-400 text-gray-900',
+                'training' => 'bg-blue-500 text-white',
+                default => 'bg-red-500 text-white',
+            };
+            return $worker;
+        });
+
         return view('livewire.schedule-board');
     }
 
@@ -266,6 +276,13 @@ class ScheduleBoard extends Component
             $schedule->status = 'proses';
             $schedule->timer = $now; // simpan timestamp start
             $schedule->save();
+
+            // Update status pekerja menjadi "sedang memperbaiki"
+            $worker = Workers::find($schedule->id_worker);
+            if ($worker) {
+                $worker->status = 'sedang memperbaiki';
+                $worker->save();
+            }
         }
         $this->mount();
     }
@@ -280,6 +297,13 @@ class ScheduleBoard extends Component
             $schedule->timer = $elapsed; // replace dengan hasil stopwatch (detik)
             $schedule->status = 'selesai';
             $schedule->save();
+
+            // Update status pekerja menjadi "aktif"
+            $worker = Workers::find($schedule->id_worker);
+            if ($worker) {
+                $worker->status = 'aktif';
+                $worker->save();
+            }
         }
         unset($this->timers[$scheduleId]);
         $this->mount();
@@ -311,7 +335,6 @@ class ScheduleBoard extends Component
         $this->editWorkerStatus = $worker->status;
         // JANGAN panggil $this->mount() di sini!
         $this->dispatch('showEditWorkerModal');
-        $this->mount();
     }
 }
 
