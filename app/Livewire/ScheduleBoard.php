@@ -176,6 +176,7 @@ class ScheduleBoard extends Component
             }
 
             $schedule->plat = $this->editPlat;
+            $schedule->keterangan = $this->showCatatan;
             $schedule->status = $this->editStatus;
             $schedule->waktu_selesai = $waktuBaru;
             $schedule->keterangan = $this->showCatatan;

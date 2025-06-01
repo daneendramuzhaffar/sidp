@@ -116,7 +116,7 @@
             {{-- CATATAN(gw bikin show only, sama lebarin sus, hehe) --}}
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Catatan</label>
-                <textarea type="text" wire:model.defer="showCatatan" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"></textarea>
+                <textarea type="text" wire:model.defer="showCatatan" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition" ></textarea>
             </div>
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Tambah Durasi (menit)</label>
