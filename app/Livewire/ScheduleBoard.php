@@ -46,6 +46,7 @@ class ScheduleBoard extends Component
     public $editWorkerId = null;
     public $editWorkerNama = '';
     public $editWorkerStatus = '';
+    public $editMulai = '';
 
     public function mount()
     {
@@ -216,7 +217,9 @@ class ScheduleBoard extends Component
             $schedule->refresh();
             $this->showModal = false;
         }
-        $this->mount();
+        $this->workers = $this->mapWorkerColors(Workers::all());
+        $this->initTimers();
+        $this->loadSchedules();
     }
 
     // TAMBAH SCHEDULE BARU
@@ -303,7 +306,9 @@ class ScheduleBoard extends Component
             'nama_mobil'    => $this->newNamaMobil,
         ]);
         $this->reset(['newWorker', 'newDate','newNoSpp', 'newTime','newKeterangan','newWorktype', 'newPlat','newNamaMobil']);
-        $this->mount();
+        $this->workers = $this->mapWorkerColors(Workers::all());
+        $this->initTimers();
+        $this->loadSchedules();
     }
 
     // TIMER
@@ -329,7 +334,9 @@ class ScheduleBoard extends Component
             }
         }
         $this->showModal = false;
-        $this->mount();
+        $this->workers = $this->mapWorkerColors(Workers::all());
+        $this->initTimers();
+        $this->loadSchedules();
     }
 
     public function stopTimer($scheduleId)
@@ -352,7 +359,9 @@ class ScheduleBoard extends Component
         }
         unset($this->timers[$scheduleId]);
         $this->showModal = false;
-        $this->mount();
+        $this->workers = $this->mapWorkerColors(Workers::all());
+        $this->initTimers();
+        $this->loadSchedules();
     }
 
     public function updateTimer()
@@ -361,7 +370,9 @@ class ScheduleBoard extends Component
             $elapsed = now()->timestamp - $timer['start'];
             $this->timers[$id]['value'] = $elapsed;
         }
-        $this->mount();
+        $this->workers = $this->mapWorkerColors(Workers::all());
+        $this->initTimers();
+        $this->loadSchedules();
     }
 
     // EXPORT TO EXCEL
@@ -378,7 +389,8 @@ class ScheduleBoard extends Component
             $this->editWorkerId = $worker->id;
             $this->editWorkerNama = $worker->nama;
             $this->editWorkerStatus = $worker->status;
-            $this->editWorkerShift = $worker->mulai === '08:00:00' ? 1 : 2;
+            // $this->editWorkerShift = $worker->mulai === '08:00:00' ? 1 : 2;
+            $this->editMulai = $worker->mulai;
         }
     }
 
@@ -388,22 +400,37 @@ class ScheduleBoard extends Component
         if ($worker) {
             $worker->nama = $this->editWorkerNama;
             $worker->status = $this->editWorkerStatus;
+            $worker->mulai = $this->editMulai;
             // Konversi angka shift ke waktu
-            if ($this->editWorkerShift == 1) {
-                $worker->mulai = '08:00:00';
-                $worker->selesai = '16:00:00';
-            }
-            if ($this->editWorkerShift == 2) {
+            // if ($this->editWorkerShift == 1) {
+            //     $worker->mulai = '08:00:00';
+            //     $worker->selesai = '16:00:00';
+            // };
+            // if ($this->editWorkerShift == 2) {
+            //     $worker->mulai = '09:00:00';
+            //     $worker->selesai = '17:00:00';
+            // } 
+            if ($this->editMulai == '09:00:00') {
                 $worker->mulai = '09:00:00';
                 $worker->selesai = '17:00:00';
+            }
+            elseif ($this->editMulai == "08:00:00"){
+                $worker->mulai = '08:00:00';
+                $worker->selesai = '16:00:00';
             } 
             $worker->save();
         }
         // dd($this->editWorkerId);
-        $this->cancelEditWorker();
-        // Refresh data worker dan jadwal
+        $this->editWorkerId = null;
+        $this->editWorkerNama = '';
+        $this->editWorkerStatus = '';
+        $this->editWorkerShift = '';
+        $this->editMulai = '';
         $this->workers = $this->mapWorkerColors(Workers::all());
+        $this->initTimers();
         $this->loadSchedules();
+        $this->dispatch('refresh-page');
+        // $this->mount();
     }
 
     public function cancelEditWorker()
@@ -413,13 +440,13 @@ class ScheduleBoard extends Component
         $this->editWorkerStatus = '';
         $this->editWorkerShift = '';
         // $this->loadSchedules();
-        $this->mount();
+        // $this->mount();
     }
 
     public function render()
     {
         
-        $this->workers = $this->mapWorkerColors($this->workers);
         return view('livewire.schedule-board');
     }
+    
 }

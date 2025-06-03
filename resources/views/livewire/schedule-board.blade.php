@@ -192,43 +192,43 @@
 
     {{-- Modal Edit Worker --}}
     @if ($editWorkerId)
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all">
-        <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
-            <button wire:click="cancelEditWorker" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition cursor-pointer text-2xl" aria-label="Tutup">&times;</button>
-            <h2 class="text-xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Edit Pekerja</h2>
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Nama</label>
-                <input type="text" wire:model.defer="editWorkerNama" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100" />
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Status</label>
-                <select wire:model.defer="editWorkerStatus" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100">
-                    <option value="" disabled >Pilih Status</option>
-                    <option value="aktif">Aktif</option>
-                    <option value="sedang memperbaiki">Sedang Memperbaiki</option>
-                    <option value="izin">Izin</option>
-                    <option value="sakit">Sakit</option>
-                    <option value="cuti">Cuti</option>
-                    <option value="training">Training</option>
-                    <option value="off">Off</option>
-                </select>
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Shift</label>
-                <select wire:model.defer="editWorkerShift" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100">
-                    <option value={{ 1 }}>Shift 1 (08:00 - 16:00)</option>
-                    <option value={{ 2 }}>Shift 2 (09:00 - 17:00)</option>
-                </select>
-            </div>
-            <div class="flex justify-end gap-2">
-                <button wire:click="cancelEditWorker" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition cursor-pointer">Batal</button>
-                <button wire:click="updateWorker" wire:loading.attr="disabled" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold cursor-pointer">
-                    Simpan
-                    <span wire:loading wire:target="updateWorker" class="animate-spin mx-1">⏳</span>
-                </button>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all" >
+            <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
+                <button wire:click="cancelEditWorker" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition cursor-pointer text-2xl" aria-label="Tutup">&times;</button>
+                <h2 class="text-xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Edit Pekerja</h2>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Nama</label>
+                    <input type="text" wire:model.defer="editWorkerNama" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100" />
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Status</label>
+                    <select wire:model.defer="editWorkerStatus" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100">
+                        <option value="" disabled >Pilih Status</option>
+                        <option value="aktif">Aktif</option>
+                        <option value="sedang memperbaiki">Sedang Memperbaiki</option>
+                        <option value="izin">Izin</option>
+                        <option value="sakit">Sakit</option>
+                        <option value="cuti">Cuti</option>
+                        <option value="training">Training</option>
+                        <option value="off">Off</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Shift</label>
+                    <select wire:model.defer="editMulai" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100">
+                        <option value="08:00:00">Shift 1 (08:00 - 16:00)</option>
+                        <option value="09:00:00">Shift 2 (09:00 - 17:00)</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button wire:click="cancelEditWorker" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition cursor-pointer">Batal</button>
+                    <button wire:click="updateWorker" wire:loading.attr="disabled" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold cursor-pointer">
+                        Simpan
+                        <span wire:loading wire:target="updateWorker" class="animate-spin mx-1">⏳</span>
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
     @endif
 
     {{-- Export Excel --}}
@@ -309,3 +309,8 @@
         </form>
     </div>
 </div>
+<script>
+    window.addEventListener('refresh-page', () => {
+        window.location.reload();
+    });
+</script>
