@@ -46,11 +46,11 @@ class DatabaseSeeder extends Seeder
         //     'password' => Hash::make('12341234'),
         // ]);
 
-        // $this->call([
-        //     WorkerSeeder::class,
-        //     WorkTypesSeeder::class,
-        //     ScheduleSeeder::class,
-        //     // Add other seeders here if needed
-        // ]);
+        $this->call([
+            WorkerSeeder::class,
+            WorkTypesSeeder::class,
+            ScheduleSeeder::class,
+            // Add other seeders here if needed
+        ]);
     }
 }

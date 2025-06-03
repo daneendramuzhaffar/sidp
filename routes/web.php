@@ -1,11 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\WorkerController;
+use App\Http\Controllers\DaftarKerjaController;
 
-// Route::get('/', function () {
-//     return view('login');
-// })->name('home');
 
 Volt::route('/', 'auth.login')->name('home');
 
@@ -14,11 +13,12 @@ Route::view('dashboard', 'dashboard')
     ->name('dashboard');
 
 
-Route::get('/workers/create', [\App\Http\Controllers\WorkerController::class, 'create'])->name('workers.create');
-Route::post('/workers', [\App\Http\Controllers\WorkerController::class, 'store'])->name('workers.store');
+Route::get('/workers/create', [WorkerController::class, 'create'])->name('workers.create');
+Route::post('/workers', [WorkerController::class, 'store'])->name('workers.store');
+Route::resource('WorkTypes', DaftarKerjaController::class)->except(['show', 'edit', 'create']);
 
-Route::get('/WorkTypes/create', [\App\Http\Controllers\DaftarKerjaController::class, 'create'])->name('WorkTypes.create');
-Route::post('/workTypes', [\App\Http\Controllers\DaftarKerjaController::class, 'store'])->name('WorkTypes.store');
+Route::get('/WorkTypes/create', [DaftarKerjaController::class, 'create'])->name('WorkTypes.create');
+Route::post('/workTypes', [DaftarKerjaController::class, 'store'])->name('WorkTypes.store');
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
