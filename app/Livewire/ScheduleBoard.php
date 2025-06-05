@@ -75,7 +75,7 @@ class ScheduleBoard extends Component
             $status = strtolower($worker->status);
             $worker->colorClass = match($status) {
                 'aktif' => 'bg-green-500 text-white',
-                'sedang memperbaiki' => 'bg-yellow-400 text-gray-900',
+                'sedang memperbaiki' => 'bg-yellow-500 text-white',
                 'training' => 'bg-blue-500 text-white',
                 default => 'bg-red-500 text-white',
             };
@@ -129,10 +129,10 @@ class ScheduleBoard extends Component
             $waktuSelesaiTimestamp = strtotime($schedule->date . ' ' . $schedule->waktu_selesai);
 
             $colorClass = match (true) {
-                ($schedule->status === 'proses' && $now > $waktuSelesaiTimestamp) => 'bg-red-600 text-white',
-                ($schedule->status === 'proses' && $now <= $waktuSelesaiTimestamp) => 'bg-blue-500 dark:bg-blue-500',
-                ($schedule->status ?? 'belum dimulai') === 'selesai' => 'bg-green-500 dark:bg-green-500',
-                default => 'bg-slate-500 dark:bg-slate-500',
+                ($schedule->status === 'proses' && $now > $waktuSelesaiTimestamp) => 'bg-red-500 text-white hover:bg-red-700 dark:bg-red-500',
+                ($schedule->status === 'proses' && $now <= $waktuSelesaiTimestamp) => 'bg-blue-500 text-white dark:bg-blue-500 hover:bg-blue-700',
+                ($schedule->status ?? 'belum dimulai') === 'selesai' => 'bg-green-500 dark:bg-green-500 hover:bg-green-700 text-white',
+                default => 'bg-slate-500 dark:bg-slate-500 hover:bg-slate-700 text-white',
             };
 
             while ($mulai < $selesai) {
@@ -173,7 +173,14 @@ class ScheduleBoard extends Component
             $this->editPlat = $schedule->plat;
             $this->editScheduleId = $schedule->id;
             $this->showModal = true;
+            $this->workers = $this->mapWorkerColors(Workers::all());
         }
+    }
+
+    public function cancelEditSchedule()
+    {
+        $this->showModal = false;
+        $this->mount();
     }
 
     // UPDATE TABEL SCHEDULE
@@ -391,6 +398,7 @@ class ScheduleBoard extends Component
             $this->editWorkerStatus = $worker->status;
             // $this->editWorkerShift = $worker->mulai === '08:00:00' ? 1 : 2;
             $this->editMulai = $worker->mulai;
+            $this->workers = $this->mapWorkerColors(Workers::all());
         }
     }
 
@@ -440,7 +448,7 @@ class ScheduleBoard extends Component
         $this->editWorkerStatus = '';
         $this->editWorkerShift = '';
         // $this->loadSchedules();
-        // $this->mount();
+        $this->workers = $this->mapWorkerColors(Workers::all());
     }
 
     public function render()

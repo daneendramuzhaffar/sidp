@@ -88,7 +88,7 @@
                                             ->values()
                                             ->toArray());
                                     @endphp
-                                    <td colspan="{{ $colspan }}" class="border border-neutral-200 dark:border-neutral-700 w-8 cursor-pointer transition hover:bg-gray-200 dark:hover:bg-gray-700 {{ $schedule['colorClass'] }}"
+                                    <td colspan="{{ $colspan }}" class="border border-neutral-200 dark:border-neutral-700 w-8 cursor-pointer transition {{ $schedule['colorClass'] }}"
                                         wire:click="editSchedule('{{ $date }}', '{{ $worker->id }}', '{{ $time }}')">
                                         <span class="block text-xs px-1 font-semibold text-gray-800 dark:text-gray-100 truncate">
                                             {{ $schedule['no_spp'] ?? '' }}<br>
@@ -110,7 +110,7 @@
     @if ($showModal)
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 backdrop-blur-sm transition-all">
         <div class="relative bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-2xl w-full max-w-md mx-4">
-            <button wire:click="$set('showModal', false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition cursor-pointer text-2xl" aria-label="Tutup">&times;</button>
+            <button wire:click="cancelEditSchedule" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition cursor-pointer text-2xl" aria-label="Tutup">&times;</button>
             <h2 class="text-xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Edit Schedule</h2>
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">No.spp</label>
@@ -152,6 +152,7 @@
                         $workTypeName = $workType ? ($workType->nama_pekerjaan ?? $workType->nama) : null;
                     }
                 @endphp
+                <br/>
                 Jenis Pekerjaan: <span class="font-semibold">{{ $workTypeName ?? '-' }}</span>
             </div>
             @if ($errors->has('overlap'))
@@ -180,7 +181,7 @@
                         <span wire:loading wire:target="startTimer" class="animate-spin mx-1">⏳</span>
                     </button>
                 @endif
-                <button wire:click="$set('showModal', false)" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition cursor-pointer">Batal</button>
+                <button wire:click="cancelEditSchedule" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition cursor-pointer">Batal</button>
                 <button wire:click="updateSchedule" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold cursor-pointer" wire:loading.attr="disabled">
                     Simpan
                     <span wire:loading wire:target="updateSchedule" class="animate-spin mx-1">⏳</span>
