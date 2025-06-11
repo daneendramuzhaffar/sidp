@@ -11,32 +11,37 @@
     </div> --}}
 
     {{-- Tabel Jadwal --}}
-    <div class="overflow-auto border border-neutral-200 dark:border-neutral-700 rounded-lg">
+    <div class="overflow-auto border max-h-[50%] border-neutral-200 dark:border-neutral-700 rounded-lg">
         <table class="min-w-full text-xs md:text-sm relative">
             <thead class="bg-gray-100 dark:bg-neutral-800 z-10">
                 <tr class="text-center">
-                    <th class="sticky left-0 top-0 z-10 bg-gray-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700" rowspan="2">Tanggal</th>
-                    <th class="sticky left-14 top-0 z-10 bg-gray-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700" rowspan="2">Pekerja</th>
+                    <th class="sticky top-0 bg-gray-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700" rowspan="2">Tanggal</th>
+                    <th class="sticky top-0 left-0 z-11 bg-gray-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700" rowspan="2">Teknisi</th>
                     @foreach (range(8, 17) as $hour)
-                        <th class="border border-neutral-200 dark:border-neutral-700" colspan="4">{{ sprintf('%02d', $hour) }}</th>
+                        <th class="sticky top-0 z-10 bg-gray-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700" colspan="4">
+                            {{ sprintf('%02d', $hour) }}
+                        </th>
                     @endforeach
                 </tr>
                 <tr class="text-center">
                     @foreach (range(8, 17) as $hour)
                         @foreach (['00', '15', '30', '45'] as $minute)
-                            <th class="border border-neutral-200 dark:border-neutral-700">{{ $minute }}</th>
+                            <th class="sticky top-5 z-10 bg-gray-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+                                {{ $minute }}
+                            </th>
                         @endforeach
                     @endforeach
                 </tr>
             </thead>
+
             <tbody>
                 @foreach ($dates as $date)
                     @foreach ($workers as $worker)
                         <tr class="text-center">
                             @if ($loop->first)
-                                <td rowspan="{{ count($workers) }}" class="sticky left-0 top-0 z-10 border border-neutral-200 dark:border-neutral-700 px-2 py-1 bg-gray-50 dark:bg-neutral-900">{{ $date }}</td>
+                                <td rowspan="{{ count($workers) }}" class="border border-neutral-200 dark:border-neutral-700 px-2 py-1 bg-gray-50 dark:bg-neutral-900">{{ $date }}</td>
                             @endif
-                            <td class="sticky left-14 top-0 z-10 border border-neutral-200 dark:border-neutral-700 px-1 py-1 {{ $worker->colorClass }}">
+                            <td class="sticky left-0 top-0 z-10 border border-neutral-200 dark:border-neutral-700 px-1 py-1 {{ $worker->colorClass }}">
                                 <button wire:click="showEditWorker({{ $worker->id }})" class="hover:underline font-semibold cursor-pointer">
                                     {{ $worker->nama }}
                                 </button>
