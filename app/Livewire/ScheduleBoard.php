@@ -346,6 +346,37 @@ class ScheduleBoard extends Component
         $this->loadSchedules();
     }
 
+    public function pauseTimer($scheduleId)
+    {
+        $schedule = Schedule::find($scheduleId);
+        if ($schedule && $schedule->status === 'proses') {
+            // Hitung waktu berjalan
+            $start = $schedule->timer; // timestamp start
+            $elapsed = now()->timestamp - $start;
+            $schedule->timer = $elapsed; // simpan waktu berjalan (detik)
+            $schedule->status = 'pause';
+            $schedule->save();
+            $schedule->refresh();
+            // Update timer 
+            $this->initTimers();
+            $this->loadSchedules();
+        }
+    }
+
+    public function resumeTimer($scheduleId)
+    {
+        $schedule = Schedule::find($scheduleId);
+        if ($schedule && $schedule->status === 'pause') {
+            // Set start baru dari waktu sekarang, timer tetap waktu berjalan sebelumnya
+            $schedule->timer = now()->timestamp - $schedule->timer;
+            $schedule->status = 'proses';
+            $schedule->save();
+            $schedule->refresh();
+            $this->initTimers();
+            $this->loadSchedules();
+        }
+    }
+
     public function stopTimer($scheduleId)
     {
         $schedule = Schedule::find($scheduleId);

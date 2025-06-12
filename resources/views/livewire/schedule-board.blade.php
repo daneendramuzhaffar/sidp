@@ -134,7 +134,7 @@
                 <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Tambah Durasi (menit)</label>
                 <input type="number" wire:model.defer="editDuration" min="15" step="15" value="0"
                     class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
-                    @if($schedule && in_array($schedule->status, ['proses', 'selesai'])) disabled @endif />
+                    @if($schedule && in_array($schedule->status, ['selesai'])) disabled @endif />
                 <span class="text-xs text-gray-500 dark:text-gray-400">Kelipatan 15 menit</span>
             </div>
             <div class="mb-6 text-sm text-gray-500 dark:text-gray-400">
@@ -175,9 +175,24 @@
                         <span wire:poll.1s="updateTimer" class="font-mono text-base text-gray-800 dark:text-gray-100">
                             {{ gmdate('i:s', $timers[$editScheduleId]['value'] ?? 0) }}
                         </span>
+                        <button wire:click="pauseTimer({{ $editScheduleId }})" wire:loading.attr="disabled" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition cursor-pointer">
+                            Pause
+                            <span wire:loading wire:target="pauseTimer" class="animate-spin mx-1">⏳</span>
+                        </button>
                         <button wire:click="stopTimer({{ $editScheduleId }})" wire:loading.attr="disabled" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition cursor-pointer">
                             Stop
                             <span wire:loading wire:target="stopTimer" class="animate-spin mx-1">⏳</span>
+                        </button>
+                    </div>
+                @elseif ($schedule && $schedule->status === 'pause')
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono text-base text-gray-800 dark:text-gray-100">
+                            {{ gmdate('i:s', $schedule->timer ?? 0) }}
+                        </span>
+                        <button wire:click="resumeTimer({{ $editScheduleId }})" wire:loading.attr="disabled"
+                            class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition cursor-pointer">
+                            Resume
+                            <span wire:loading wire:target="resumeTimer" class="animate-spin mx-1">⏳</span>
                         </button>
                     </div>
                 @else
