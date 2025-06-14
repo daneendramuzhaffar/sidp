@@ -99,6 +99,7 @@ class ScheduleBoard extends Component
     public function loadSchedules()
     {
         $this->schedules = [];
+        // $this->workers = $this->mapWorkerColors(Workers::all());
         $date = $this->selectedDate ?? date('Y-m-d');
         $this->dates = [$date];
 
@@ -131,6 +132,7 @@ class ScheduleBoard extends Component
             $colorClass = match (true) {
                 ($schedule->status === 'proses' && $now > $waktuSelesaiTimestamp) => 'bg-red-500 text-white hover:bg-red-700 dark:bg-red-500',
                 ($schedule->status === 'proses' && $now <= $waktuSelesaiTimestamp) => 'bg-blue-500 text-white dark:bg-blue-500 hover:bg-blue-700',
+                $schedule->status === 'pause' => 'bg-purple-500 text-white hover:bg-purple-700 dark:bg-purple-500',
                 ($schedule->status ?? 'belum dimulai') === 'selesai' => 'bg-green-500 dark:bg-green-500 hover:bg-green-700 text-white',
                 default => 'bg-slate-500 dark:bg-slate-500 hover:bg-slate-700 text-white',
             };
@@ -150,6 +152,7 @@ class ScheduleBoard extends Component
                 $mulai->addMinutes($interval);
             }
         }
+        $this->workers = $this->mapWorkerColors(Workers::all());
     }
 
     // EDIT TABLE SCHEDULE
@@ -224,7 +227,7 @@ class ScheduleBoard extends Component
             $schedule->refresh();
             $this->showModal = false;
         }
-        $this->workers = $this->mapWorkerColors(Workers::all());
+        // $this->workers = $this->mapWorkerColors(Workers::all());
         $this->initTimers();
         $this->loadSchedules();
     }
@@ -246,6 +249,7 @@ class ScheduleBoard extends Component
         $allowedStatuses = ['aktif', 'sedang memperbaiki', 'training'];
         if (!$worker || !in_array(strtolower($worker->status), $allowedStatuses)) {
             $this->addError('newWorker', 'Status pekerja tidak mengizinkan input jadwal.');
+            $this->loadSchedules();
             return;
         }
 
@@ -265,6 +269,7 @@ class ScheduleBoard extends Component
                 strtotime($waktuSelesai) > strtotime($jamSelesaiWorker)
             ) {
                 $this->addError('overlap', 'Jadwal di luar jam kerja pekerja! ('.substr($worker->mulai,0,5).' - '.substr($worker->selesai,0,5).')');
+                $this->loadSchedules();
                 return;
             }
         }
@@ -273,13 +278,63 @@ class ScheduleBoard extends Component
         $jamMulaiWorker = strlen($worker->mulai) === 5 ? $worker->mulai . ':00' : $worker->mulai;
         $break = $this->breakTimes[$jamMulaiWorker] ?? null;
         if ($break) {
-            $breakStart = $break[0];
-            $breakEnd = $break[1];
-            if (
-                (strtotime($waktuMulai) < strtotime($breakEnd)) &&
-                (strtotime($waktuSelesai) > strtotime($breakStart))
-            ) {
-                $this->addError('overlap', 'Tidak bisa menambah jadwal pada jam istirahat shift!');
+            $breakStart = $break[0]; // contoh: '12:00:00'
+            $breakEnd = $break[1];   // contoh: '13:00:00'
+
+            $startTime = strtotime($waktuMulai);
+            $endTime = strtotime($waktuSelesai);
+            $breakStartTime = strtotime($breakStart);
+            $breakEndTime = strtotime($breakEnd);
+
+            if (($startTime < $breakEndTime) && ($endTime > $breakStartTime)) {
+                // Jadwal bentrok dengan istirahat, kita split
+                $remainingDuration = $endTime - $startTime; // dalam detik
+                $currentStart = $startTime;
+
+                // Bagian sebelum istirahat
+                if ($currentStart < $breakStartTime) {
+                    $currentEnd = min($currentStart + $remainingDuration, $breakStartTime);
+                    $durationThisSlot = $currentEnd - $currentStart;
+
+                    Schedule::create([
+                        'id_worker'     => $this->newWorker,
+                        'date'          => $this->newDate,
+                        'no_spp'        => $this->newNoSpp,
+                        'waktu_mulai'   => date('H:i:s', $currentStart),
+                        'waktu_selesai' => date('H:i:s', $currentEnd),
+                        'duration'      => $this->newWorktype,
+                        'plat'          => $this->newPlat,
+                        'keterangan'    => $this->newKeterangan,
+                        'id_worktype'   => $this->newWorktype,
+                        'nama_mobil'    => $this->newNamaMobil,
+                    ]);
+
+                    $remainingDuration -= $durationThisSlot;
+                    $currentStart = $breakEndTime; // lompat ke setelah istirahat
+                }
+
+                // Bagian setelah istirahat (kalau masih ada sisa durasi)
+                if ($remainingDuration > 0) {
+                    $currentEnd = $currentStart + $remainingDuration;
+
+                    Schedule::create([
+                        'id_worker'     => $this->newWorker,
+                        'date'          => $this->newDate,
+                        'no_spp'        => $this->newNoSpp,
+                        'waktu_mulai'   => date('H:i:s', $currentStart),
+                        'waktu_selesai' => date('H:i:s', $currentEnd),
+                        'duration'      => $this->newWorktype,
+                        'plat'          => $this->newPlat,
+                        'keterangan'    => $this->newKeterangan,
+                        'id_worktype'   => $this->newWorktype,
+                        'nama_mobil'    => $this->newNamaMobil,
+                    ]);
+                }
+
+                // Reset form & reload
+                $this->reset(['newWorker', 'newDate','newNoSpp', 'newTime','newKeterangan','newWorktype', 'newPlat','newNamaMobil']);
+                $this->initTimers();
+                $this->loadSchedules();
                 return;
             }
         }
@@ -297,6 +352,7 @@ class ScheduleBoard extends Component
 
         if ($overlap) {
             $this->addError('overlap', 'Jadwal bentrok dengan jadwal lain untuk teknisi ini!');
+            $this->workers = $this->mapWorkerColors(Workers::all());
             return;
         }
 
@@ -319,85 +375,104 @@ class ScheduleBoard extends Component
     }
 
     // TIMER
-    public function startTimer($scheduleId)
+    public function startTimer($noSpp)
     {
         $now = now()->timestamp;
-        $this->timers[$scheduleId] = [
-            'start' => $now,
-            'value' => 0,
-        ];
 
-        $schedule = Schedule::find($scheduleId);
-        if ($schedule) {
+        // Ambil semua jadwal dengan no_spp yang sama
+        $schedules = Schedule::where('no_spp', $noSpp)->get();
+
+        if ($schedules->isEmpty()) {
+            logger('Tidak ada schedule ditemukan untuk no_spp: ' . $noSpp);
+            return;
+        }
+
+        foreach ($schedules as $schedule) {
             $schedule->status = 'proses';
             $schedule->timer = $now;
             $schedule->save();
 
-            // Update status pekerja menjadi "sedang memperbaiki"
             $worker = Workers::find($schedule->id_worker);
             if ($worker) {
                 $worker->status = 'sedang memperbaiki';
                 $worker->save();
             }
+
+            $this->timers[$schedule->id] = [
+                'start' => $now,
+                'value' => 0,
+            ];
         }
+
         $this->showModal = false;
-        $this->workers = $this->mapWorkerColors(Workers::all());
+        // $this->workers = $this->mapWorkerColors(Workers::all());
         $this->initTimers();
         $this->loadSchedules();
     }
 
-    public function pauseTimer($scheduleId)
+    public function pauseTimer($noSpp)
     {
-        $schedule = Schedule::find($scheduleId);
-        if ($schedule && $schedule->status === 'proses') {
-            // Hitung waktu berjalan
-            $start = $schedule->timer; // timestamp start
-            $elapsed = now()->timestamp - $start;
-            $schedule->timer = $elapsed; // simpan waktu berjalan (detik)
+        $schedules = Schedule::where('no_spp', $noSpp)->where('status', 'proses')->get();
+        $now = now()->timestamp;
+
+        foreach ($schedules as $schedule) {
+            $elapsed = $now - $schedule->timer; 
+            $schedule->timer = $elapsed;
             $schedule->status = 'pause';
             $schedule->save();
-            $schedule->refresh();
-            // Update timer 
-            $this->initTimers();
-            $this->loadSchedules();
+
+            unset($this->timers[$schedule->id]); 
         }
+
+        $this->showModal = false;
+        $this->initTimers();
+        $this->loadSchedules();
     }
 
-    public function resumeTimer($scheduleId)
+    public function resumeTimer($noSpp)
     {
-        $schedule = Schedule::find($scheduleId);
-        if ($schedule && $schedule->status === 'pause') {
-            // Set start baru dari waktu sekarang, timer tetap waktu berjalan sebelumnya
-            $schedule->timer = now()->timestamp - $schedule->timer;
+        $schedules = Schedule::where('no_spp', $noSpp)->where('status', 'pause')->get();
+        $now = now()->timestamp;
+
+        foreach ($schedules as $schedule) {
+            $schedule->timer = $now - $schedule->timer; 
             $schedule->status = 'proses';
             $schedule->save();
-            $schedule->refresh();
-            $this->initTimers();
-            $this->loadSchedules();
+
+            $this->timers[$schedule->id] = [
+                'start' => $schedule->timer,
+                'value' => 0,
+            ];
         }
+
+        $this->showModal = false;
+        $this->initTimers();
+        $this->loadSchedules();
     }
 
-    public function stopTimer($scheduleId)
+    public function stopTimer($noSpp)
     {
-        $schedule = Schedule::find($scheduleId);
-        if ($schedule && $schedule->status === 'proses') {
-            $start = $schedule->timer;
-            $elapsed = now()->timestamp - $start;
+        $schedules = Schedule::where('no_spp', $noSpp)->where('status', 'proses')->get();
+        $now = now()->timestamp;
+
+        foreach ($schedules as $schedule) {
+            $elapsed = $now - $schedule->timer; 
             $schedule->timer = $elapsed;
             $schedule->status = 'selesai';
             $schedule->save();
-            $schedule->refresh();
 
-            // Update status pekerja menjadi "aktif"
+            // Update status worker jadi aktif
             $worker = Workers::find($schedule->id_worker);
             if ($worker) {
                 $worker->status = 'aktif';
                 $worker->save();
             }
+
+            unset($this->timers[$schedule->id]);
         }
-        unset($this->timers[$scheduleId]);
+
         $this->showModal = false;
-        $this->workers = $this->mapWorkerColors(Workers::all());
+        // $this->workers = $this->mapWorkerColors(Workers::all());
         $this->initTimers();
         $this->loadSchedules();
     }
@@ -408,10 +483,12 @@ class ScheduleBoard extends Component
             $elapsed = now()->timestamp - $timer['start'];
             $this->timers[$id]['value'] = $elapsed;
         }
-        $this->workers = $this->mapWorkerColors(Workers::all());
-        $this->initTimers();
         $this->loadSchedules();
+
+        // Tidak perlu load ulang worker dan schedule di setiap updateTimer 
+        // Kecuali Anda benar-benar ingin polling update data
     }
+
 
     // EXPORT TO EXCEL
     public function exportExcel()
@@ -465,7 +542,7 @@ class ScheduleBoard extends Component
         $this->editWorkerStatus = '';
         $this->editWorkerShift = '';
         $this->editMulai = '';
-        $this->workers = $this->mapWorkerColors(Workers::all());
+        // $this->workers = $this->mapWorkerColors(Workers::all());
         $this->initTimers();
         $this->loadSchedules();
         $this->dispatch('refresh-page');

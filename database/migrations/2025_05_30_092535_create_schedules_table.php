@@ -21,7 +21,7 @@ return new class extends Migration
             $table->time('waktu_mulai')->default('00:00:00'); // default start time
             $table->bigInteger('timer')->nullable()->default(0); // timer for tracking duration
             $table->time('waktu_selesai')->default('00:00:00'); // default end time
-            $table->enum('status', ['belum dimulai', 'proses', 'selesai'])->default('belum dimulai');
+            $table->enum('status', ['belum dimulai', 'proses', 'selesai', 'pause'])->default('belum dimulai');
             $table->string('keterangan')->nullable(); // optional notes or description
             $table->timestamps();
             $table->string('nama_mobil');

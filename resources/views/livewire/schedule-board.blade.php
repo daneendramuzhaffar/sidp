@@ -175,11 +175,11 @@
                         <span wire:poll.1s="updateTimer" class="font-mono text-base text-gray-800 dark:text-gray-100">
                             {{ gmdate('i:s', $timers[$editScheduleId]['value'] ?? 0) }}
                         </span>
-                        <button wire:click="pauseTimer({{ $editScheduleId }})" wire:loading.attr="disabled" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition cursor-pointer">
+                        <button wire:click="pauseTimer('{{ $schedule->no_spp }}')" wire:loading.attr="disabled" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition cursor-pointer">
                             Pause
                             <span wire:loading wire:target="pauseTimer" class="animate-spin mx-1">⏳</span>
                         </button>
-                        <button wire:click="stopTimer({{ $editScheduleId }})" wire:loading.attr="disabled" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition cursor-pointer">
+                        <button wire:click="stopTimer('{{ $schedule->no_spp }}')" wire:loading.attr="disabled" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition cursor-pointer">
                             Stop
                             <span wire:loading wire:target="stopTimer" class="animate-spin mx-1">⏳</span>
                         </button>
@@ -189,14 +189,14 @@
                         <span class="font-mono text-base text-gray-800 dark:text-gray-100">
                             {{ gmdate('i:s', $schedule->timer ?? 0) }}
                         </span>
-                        <button wire:click="resumeTimer({{ $editScheduleId }})" wire:loading.attr="disabled"
+                        <button wire:click="resumeTimer('{{ $schedule->no_spp }}')" wire:loading.attr="disabled"
                             class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition cursor-pointer">
                             Resume
                             <span wire:loading wire:target="resumeTimer" class="animate-spin mx-1">⏳</span>
                         </button>
                     </div>
                 @else
-                    <button wire:click="startTimer({{ $editScheduleId }})" wire:loading.attr="disabled" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition cursor-pointer">
+                    <button wire:click="startTimer('{{ $schedule->no_spp }}')" wire:loading.attr="disabled" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition cursor-pointer">
                         Start Timer
                         <span wire:loading wire:target="startTimer" class="animate-spin mx-1">⏳</span>
                     </button>
@@ -266,7 +266,7 @@
         <form wire:submit.prevent="tambahSchedule" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Teknisi</label>
-                <select wire:model="newWorker" class="cursor-pointer border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
+                <select required wire:model="newWorker" class="cursor-pointer border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
                     <option value="">Pilih</option>
                     @foreach($workers as $w)
                         <option value="{{ $w->id }}">{{ $w->nama }}</option>
@@ -275,15 +275,15 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">No. SPP</label>
-                <input type="text" wire:model="newNoSpp" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
+                <input required type="text" wire:model="newNoSpp" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
             </div>
             <div>
                 <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Tanggal</label>
-                <input type="date" wire:model="newDate" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
+                <input required type="date" wire:model="newDate" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
             </div>
             <div>
                 <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Jam Mulai</label>
-                <select wire:model="newTime" class="cursor-pointer border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
+                <select required wire:model="newTime" class="cursor-pointer border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
                     <option value="">Pilih</option>
                     @foreach($times as $t)
                         <option value="{{ $t }}">{{ $t }}</option>
@@ -292,7 +292,7 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Jenis Pekerjaan</label>
-                <select wire:model="newWorktype" class="cursor-pointer border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
+                <select required wire:model="newWorktype" class="cursor-pointer border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
                     <option value="">Pilih</option>
                     @foreach($worktypes as $type)
                         <option value="{{ $type->id }}">{{ $type->nama_pekerjaan ?? $type->nama }} ({{ $type->flatrate }}m)</option>
@@ -301,15 +301,15 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Plat</label>
-                <input type="text" wire:model="newPlat" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
+                <input required type="text" wire:model="newPlat" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
             </div>
             <div>
                 <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Nama Mobil</label>
-                <input type="text" wire:model="newNamaMobil" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
+                <input required type="text" wire:model="newNamaMobil" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
             </div>
             <div>
                 <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Catatan</label>
-                <input type="text" wire:model="newKeterangan" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
+                <input required type="text" wire:model="newKeterangan" class="border border-neutral-200 dark:border-neutral-700 rounded w-full px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
             </div>
             <div class="flex items-center gap-4">
                 <button type="submit" wire:loading.attr="disabled" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold shadow transition cursor-pointer min-w-fit">
