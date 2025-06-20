@@ -559,6 +559,42 @@ class ScheduleBoard extends Component
         $this->workers = $this->mapWorkerColors(Workers::all());
     }
 
+    public function hapusSchedule()
+    {
+        if ($this->editScheduleId) {
+            $schedule = Schedule::find($this->editScheduleId);
+            if ($schedule) {
+            Schedule::where('no_spp', $schedule->no_spp)
+                ->where('id_worker', $schedule->id_worker)
+                ->where('date', $schedule->date)
+                ->where('waktu_mulai', '>=', $schedule->waktu_mulai)
+                ->delete();
+            }
+            $this->showModal = false;
+            $this->editScheduleId = null;
+            $this->initTimers();
+            $this->loadSchedules();
+            $this->dispatch('refresh-page');
+        }
+    }
+
+    public function hapusTeknisi($workerId)
+    {
+        Schedule::where('id_worker', $workerId)
+            ->where('status', 'belum dimulai')
+            ->delete();
+
+        $worker = Workers::find($workerId);
+        if ($worker) {
+            $worker->delete();
+        }
+
+        $this->initTimers();
+        $this->loadSchedules();            
+        $this->dispatch('refresh-page');
+        }
+
+
     public function render()
     {
         

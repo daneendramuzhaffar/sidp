@@ -201,7 +201,7 @@
                         <span wire:loading wire:target="startTimer" class="animate-spin mx-1">⏳</span>
                     </button>
                 @endif
-                <button wire:click="cancelEditSchedule" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition cursor-pointer">Batal</button>
+                <button onclick="if(confirm('Yakin hapus pekerjaan ini?')) { @this.hapusSchedule() }" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition cursor-pointer cursor-pointer">Hapus</button>
                 <button wire:click="updateSchedule" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold cursor-pointer" wire:loading.attr="disabled">
                     Simpan
                     <span wire:loading wire:target="updateSchedule" class="animate-spin mx-1">⏳</span>
@@ -242,7 +242,7 @@
                     </select>
                 </div>
                 <div class="flex justify-end gap-2">
-                    <button wire:click="cancelEditWorker" class="px-4 py-2 bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-neutral-700 transition cursor-pointer">Batal</button>
+                    <button onclick="if(confirm('Yakin hapus teknisi ini beserta seluruh jadwalnya?')) { @this.hapusTeknisi({{ $worker->id }}) }" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition cursor-pointer cursor-pointer">Hapus</button>
                     <button wire:click="updateWorker" wire:loading.attr="disabled" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition font-semibold cursor-pointer">
                         Simpan
                         <span wire:loading wire:target="updateWorker" class="animate-spin mx-1">⏳</span>
