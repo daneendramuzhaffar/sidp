@@ -10,7 +10,7 @@ class workerController extends Controller
 {
     public function create()
     {
-        return view('workers.create');
+        return view('Workers.create');
     }
 public function store(Request $request)
 {
